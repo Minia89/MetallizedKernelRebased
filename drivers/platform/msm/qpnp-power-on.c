@@ -119,6 +119,7 @@ struct qpnp_pon_config {
 	u32 bark_irq;
 	u16 s2_cntl_addr;
 	u16 s2_cntl2_addr;
+	bool old_state;
 	bool use_bark;
 };
 
@@ -445,6 +446,7 @@ qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 	int rc;
 	struct qpnp_pon_config *cfg = NULL;
 	u8 pon_rt_sts = 0, pon_rt_bit = 0;
+	u32 key_status;
 
 	cfg = qpnp_get_cfg(pon, pon_type);
 	if (!cfg)
@@ -479,9 +481,35 @@ qpnp_pon_input_dispatch(struct qpnp_pon *pon, u32 pon_type)
 		return -EINVAL;
 	}
 
-	input_report_key(pon->pon_input, cfg->key_code,
-					(pon_rt_sts & pon_rt_bit));
+#ifdef CONFIG_LGE_PM
+	pr_info("%s:code(%d), value(%d)\n",
+			__func__, cfg->key_code, (pon_rt_sts & pon_rt_bit));
+#endif
+
+#ifdef CONFIG_LGE_PM_PWR_KEY_FOR_CHG_LOGO
+
+	if (lge_get_boot_mode() == LGE_BOOT_MODE_CHARGERLOGO) {
+		if (wake_lock_active(&pon->chg_logo_wake_lock))
+			wake_unlock(&pon->chg_logo_wake_lock);
+		pr_info("[CHARGERLOGO MODE] active chg_logo wakelock during 500ms\n");
+		wake_lock_timeout(&pon->chg_logo_wake_lock, 500);
+	}
+
+#endif
+	key_status = pon_rt_sts & pon_rt_bit;
+
+	/* simulate press event in case release event occured
+	 * without a press event
+	 */
+	if (!cfg->old_state && !key_status) {
+		input_report_key(pon->pon_input, cfg->key_code, 1);
+		input_sync(pon->pon_input);
+	}
+
+	input_report_key(pon->pon_input, cfg->key_code, key_status);
 	input_sync(pon->pon_input);
+
+	cfg->old_state = !!key_status;
 
 	return 0;
 }
