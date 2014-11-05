@@ -178,7 +178,7 @@ int msm_platform_secondary_init(unsigned int cpu)
 
 	if (!(*warm_boot)) {
 		*warm_boot = 1;
-		return 0;
+
 		if (cpu)
 			return 0;
 	}
