@@ -1,4 +1,5 @@
-CFLAGS_scm.o :=$(call as-instr,.arch_extension sec,-DREQUIRES_SEC=1)
+CFLAGS_scm.o :=$(call as-instr,.arch_extension sec,-DREQUIRES_SEC=1) -fno-strict-aliasing
+CFLAGS_board-msm-bcm4356.o := -fno-strict-aliasing
 
 obj-y += io.o dma.o memory.o
 ifndef CONFIG_ARM_ARCH_TIMER
