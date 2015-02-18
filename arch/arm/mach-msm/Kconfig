@@ -3074,8 +3074,7 @@ config MSM_HOTPLUG
 
 config MSM_LIMITER
 	bool "MSM Frequency Limiter Driver"
-	depends on (LCD_NOTIFY || POWERSUSPEND || HAS_EARLYSUSPEND)
-	default n
+	default y
 	help
 	  The MSM Frequency Limiter Driver controls max frequency limit for each 		  CPU
 	  to desired value on suspend/resume
