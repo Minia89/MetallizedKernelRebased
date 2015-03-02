@@ -33,6 +33,8 @@
 #endif //CONFIG_MACH_OPPO
 #ifdef CONFIG_STATE_NOTIFIER
 #include <linux/state_notifier.h>
+#ifdef CONFIG_LCD_NOTIFY
+#include <linux/lcd_notify.h>
 #endif
 
 #define REG_CTRL	0x00
@@ -214,6 +216,22 @@ static int lm3630_intr_config(struct lm3630_chip_data *pchip)
 	// if display is switched on
 	if (!use_fb_notifier && bl_level != 0 && pre_brightness == 0)
 		state_notifier_call_chain(STATE_NOTIFIER_ACTIVE, NULL);
+#endif
+
+#ifdef CONFIG_LCD_NOTIFY
+	// LDC notifier
+	// if display is switched off
+	if (bl_level == 0) 
+	{
+		lcd_notifier_call_chain(LCD_EVENT_OFF_START);
+		lcd_notifier_call_chain(LCD_EVENT_OFF_END);
+	}
+	// if display is switched on
+	if (bl_level != 0 && pre_brightness == 0) 
+	{
+		lcd_notifier_call_chain(LCD_EVENT_ON_START);
+		lcd_notifier_call_chain(LCD_EVENT_ON_END);
+	}
 #endif
 
 #ifdef CONFIG_MACH_OPPO
