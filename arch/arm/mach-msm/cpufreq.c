@@ -42,6 +42,11 @@ static struct clk *l2_clk;
 static DEFINE_PER_CPU(struct cpufreq_frequency_table *, freq_table);
 static bool hotplug_ready;
 
+/* maxscroff */
+
+uint32_t maxscroff_freq = 1190400;
+uint32_t maxscroff = 0;
+
 struct cpufreq_suspend_t {
 	struct mutex suspend_mutex;
 	int device_suspended;
@@ -51,6 +56,35 @@ static DEFINE_PER_CPU(struct cpufreq_suspend_t, cpufreq_suspend);
 
 static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq,
 			unsigned int index)
+
+struct cpu_freq {
+	uint32_t max;
+	uint32_t min;
+	uint32_t allowed_max;
+	uint32_t allowed_min;
+	uint32_t limits_init;
+};
+
+static DEFINE_PER_CPU(struct cpu_freq, cpu_freq_info);
+
+
+/**maxscroff**/
+static int __init cpufreq_read_arg_maxscroff(char *max_so)
+{
+	if (strcmp(max_so, "0") == 0) {
+		maxscroff = 0;
+	} else if (strcmp(max_so, "1") == 0) {
+		maxscroff = 1;
+	} else {
+		maxscroff = 0;
+	}
+	return 1;
+}
+
+__setup("max_so=", cpufreq_read_arg_maxscroff);
+/**end maxscroff**/ 
+
+static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 {
 	int ret = 0;
 	int saved_sched_policy = -EINVAL;
@@ -292,6 +326,16 @@ static int msm_cpufreq_resume(void)
 
 static int msm_cpufreq_pm_event(struct notifier_block *this,
 				unsigned long event, void *ptr)
+=======
+
+/** maxscreen off sysfs interface **/
+
+static ssize_t show_max_screen_off(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", maxscroff);
+}
+
+static ssize_t show_max_screen_off_khz(struct cpufreq_policy *policy, char *buf)
 {
 	switch (event) {
 	case PM_POST_HIBERNATION:
@@ -501,6 +545,21 @@ static int __init msm_cpufreq_probe(struct platform_device *pdev)
 static struct of_device_id match_table[] = {
 	{ .compatible = "qcom,msm-cpufreq" },
 	{}
+
+struct freq_attr msm_cpufreq_attr_max_screen_off_khz = {
+	.attr = { .name = "screen_off_max_freq",
+		.mode = 0644,
+	},
+	.show = show_max_screen_off_khz,
+	.store = store_max_screen_off_khz,
+};
+
+/** end maxscreen off sysfs interface **/
+
+static struct freq_attr *msm_freq_attr[] = {
+	&cpufreq_freq_attr_scaling_available_freqs,
+	&msm_cpufreq_attr_max_screen_off_khz, 
+	NULL,
 };
 
 static struct platform_driver msm_cpufreq_plat_driver = {
