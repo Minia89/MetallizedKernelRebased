@@ -80,14 +80,14 @@ static int test_task_flag(struct task_struct *p, int flag)
 {
 	struct task_struct *t;
 
-	do {
+	for_each_thread(p,t) {
 		task_lock(t);
 		if (test_tsk_thread_flag(t, flag)) {
 			task_unlock(t);
 			return 1;
 		}
 		task_unlock(t);
-	} while_each_thread(p, t);
+	}
 
 	return 0;
 }
@@ -194,8 +194,7 @@ void adjust_gfp_mask(gfp_t *unused)
 }
 #endif
 
-void tune_lmk_param(int *other_free, int *other_file, struct shrink_control *sc,
-				struct zone_avail zall[][MAX_NR_ZONES])
+void tune_lmk_param(int *other_free, int *other_file, struct shrink_control *sc)
 {
 	gfp_t gfp_mask;
 	struct zone *preferred_zone;
@@ -428,20 +427,20 @@ static struct shrinker lowmem_shrinker = {
 
 #ifdef CONFIG_ANDROID_BG_SCAN_MEM
 static int lmk_task_migration_notify(struct notifier_block *nb,
- unsigned long data, void *arg)
+					unsigned long data, void *arg)
 {
- struct shrink_control sc = {
- .gfp_mask = GFP_KERNEL,
- .nr_to_scan = 1,
- };
+	struct shrink_control sc = {
+		.gfp_mask = GFP_KERNEL,
+		.nr_to_scan = 1,
+	};
 
- lowmem_shrink(&lowmem_shrinker, &sc);
+	lowmem_shrink(&lowmem_shrinker, &sc);
 
- return NOTIFY_OK;
+	return NOTIFY_OK;
 }
 
 static struct notifier_block tsk_migration_nb = {
- .notifier_call = lmk_task_migration_notify,
+	.notifier_call = lmk_task_migration_notify,
 };
 #endif
 
@@ -449,8 +448,8 @@ static int __init lowmem_init(void)
 {
 	register_shrinker(&lowmem_shrinker);
 #ifdef CONFIG_ANDROID_BG_SCAN_MEM
- raw_notifier_chain_register(&bgtsk_migration_notifier_head,
- &tsk_migration_nb);
+	raw_notifier_chain_register(&bgtsk_migration_notifier_head,
+					&tsk_migration_nb);
 #endif
 	return 0;
 }
@@ -459,8 +458,8 @@ static void __exit lowmem_exit(void)
 {
 	unregister_shrinker(&lowmem_shrinker);
 #ifdef CONFIG_ANDROID_BG_SCAN_MEM
- raw_notifier_chain_unregister(&bgtsk_migration_notifier_head,
- &tsk_migration_nb);
+	raw_notifier_chain_unregister(&bgtsk_migration_notifier_head,
+					&tsk_migration_nb);
 #endif
 }
 
@@ -561,4 +560,5 @@ module_init(lowmem_init);
 module_exit(lowmem_exit);
 
 MODULE_LICENSE("GPL");
+
 
