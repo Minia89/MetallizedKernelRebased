@@ -3092,4 +3092,3 @@ config HAS_MACH_MEMUTILS
 	help
 	Faster memcpy performance for Krait
 endif
->>>>>>> 1158f6a... introduce: msm_limiter
