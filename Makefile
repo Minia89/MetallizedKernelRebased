@@ -356,12 +356,11 @@ CHECK		= sparse
 CHECKFLAGS := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 -Wbitwise -Wno-return-void $(CF)
 KERNELFLAGS = -pipe -DNDEBUG -O3 -ffast-math -mtune=cortex-a15 -mcpu=cortex-a15 -marm -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad -munaligned-access -fgcse-lm -fgcse-sm -fsingle-precision-constant -fforce-addr -fsched-spec-load -fgraphite -fgraphite-identity
-MODFLAGS	= -DMODULE $(KERNELFLAGS)
-CFLAGS_MODULE = $(MODFLAGS)
-AFLAGS_MODULE = $(MODFLAGS)
-LDFLAGS_MODULE = -T $(srctree)/scripts/module-common.lds
-CFLAGS_KERNEL	= $(KERNELFLAGS)
-AFLAGS_KERNEL	= $(KERNELFLAGS)
+CFLAGS_MODULE = $(GRAPHITE) -DMODULE -DNDEBUG
+AFLAGS_MODULE = $(GRAPHITE) -DMODULE -DNDEBUG
+LDFLAGS_MODULE = $(GRAPHITE) -DMODULE -DNDEBUG
+CFLAGS_KERNEL	= $(GRAPHITE) -DNDEBUG -fsingle-precision-constant
+AFLAGS_KERNEL	= $(GRAPHITE) -DNDEBUG
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -374,11 +373,18 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
--fno-strict-aliasing -fno-common \
+KBUILD_CFLAGS := $(GRAPHITE) -Wall -pipe -pthread -DNDEBUG -Wundef -Wstrict-prototypes -Wno-trigraphs \
+ -fstrict-aliasing -fivopts -fipa-pta -fira-hoist-pressure -fno-common \
+ -ftree-loop-distribution -ftree-loop-if-convert -fprefetch-loop-arrays \
+ -ftree-vectorize -mvectorize-with-neon-quad \
 -Werror-implicit-function-declaration \
--Wno-format-security \
--fno-delete-null-pointer-checks \
+-funroll-loops -ftree-loop-im -ftree-loop-ivcanon \
+-Wno-format-security -marm -funsafe-math-optimizations \
+-mtune=cortex-a15 \
+-fmodulo-sched -fmodulo-sched-allow-regmoves \
+-fgcse-after-reload \
+-fsingle-precision-constant \
+-fno-delete-null-pointer-checks
 $(KERNELFLAGS)
 KBUILD_AFLAGS_KERNEL := $(KERNELFLAGS)
 KBUILD_CFLAGS_KERNEL := $(KERNELFLAGS)
@@ -583,8 +589,8 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
-KBUILD_CFLAGS += -O3 -fmodulo-sched -fmodulo-sched-allow-regmoves -fno-tree-vectorize -Wno-array-bounds
-KBUILD_CFLAGS += $(call cc-disable-warning,maybe-uninitialized)
+KBUILD_CFLAGS	+= -Ofast
+KBUILD_CFLAGS += $(call cc-disable-warning,maybe-uninitialized) -fno-inline-functions
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
