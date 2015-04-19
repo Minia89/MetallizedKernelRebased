@@ -385,7 +385,6 @@ KBUILD_CFLAGS := $(GRAPHITE) -Wall -pipe -pthread -DNDEBUG -Wundef -Wstrict-prot
 -fgcse-after-reload \
 -fsingle-precision-constant \
 -fno-delete-null-pointer-checks
-$(KERNELFLAGS)
 KBUILD_AFLAGS_KERNEL := $(KERNELFLAGS)
 KBUILD_CFLAGS_KERNEL := $(KERNELFLAGS)
 KBUILD_AFLAGS   := -D__ASSEMBLY__
