@@ -245,8 +245,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC = gcc
 HOSTCXX = g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -fgcse-las -fgraphite -fgraphite-identity -pipe -DNDEBUG -pthread -fstrict-aliasing -fuse-linker-plugin -flto=4
-HOSTCXXFLAGS = -O3 -fgcse-las -fgraphite -fgraphite-identity -pipe -DNDEBUG -pthread -fstrict-aliasing -fuse-linker-plugin -flto=4
+HOSTCFLAGS = -Wall -Wmissing-prototypes -O3 -fomit-frame-pointer -fgcse-las -fgraphite -fgraphite-identity -pipe -DNDEBUG -fuse-linker-plugin -flto=4 -Wstrict-prototypes
+HOSTCXXFLAGS = -O3 -fgcse-las -fgraphite -fgraphite-identity -pipe -DNDEBUG -fuse-linker-plugin -flto=4
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -373,17 +373,18 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-KBUILD_CFLAGS := $(GRAPHITE) -Wall -pipe -pthread -DNDEBUG -Wundef -Wstrict-prototypes -Wno-trigraphs \
- -fstrict-aliasing -fivopts -fipa-pta -fira-hoist-pressure -fno-common \
+KBUILD_CFLAGS := $(GRAPHITE) -Wall -pipe -DNDEBUG -Wundef -Wno-trigraphs -Wstrict-prototypes \
+ -fivopts -fipa-pta -fira-hoist-pressure -fno-common -fstrict-aliasing \
  -ftree-loop-distribution -ftree-loop-if-convert -fprefetch-loop-arrays \
  -ftree-vectorize -mvectorize-with-neon-quad \
--Werror-implicit-function-declaration \
+-Werror-implicit-function-declaration -fno-strict-aliasing \
 -funroll-loops -ftree-loop-im -ftree-loop-ivcanon \
 -Wno-format-security -marm -funsafe-math-optimizations \
 -mtune=cortex-a15 \
 -fmodulo-sched -fmodulo-sched-allow-regmoves \
 -fgcse-after-reload \
 -fsingle-precision-constant \
+-Wno-array-bounds \
 -fno-delete-null-pointer-checks
 KBUILD_AFLAGS_KERNEL := $(KERNELFLAGS)
 KBUILD_CFLAGS_KERNEL := $(KERNELFLAGS)
@@ -589,6 +590,8 @@ ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
 KBUILD_CFLAGS	+= -Ofast
+KBUILD_CFLAGS += $(call cc-disable-warning,maybe-uninitialized) -fno-inline-functions
+KBUILD_CFLAGS += $(call cc-disable-warning,array-bounds)
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
