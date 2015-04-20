@@ -379,6 +379,7 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 -Werror-implicit-function-declaration \
 -Wno-format-security \
 -fno-delete-null-pointer-checks \
+-Wno-array-bounds \
 $(KERNELFLAGS)
 KBUILD_AFLAGS_KERNEL := $(KERNELFLAGS)
 KBUILD_CFLAGS_KERNEL := $(KERNELFLAGS)
@@ -582,9 +583,9 @@ all: vmlinux
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
-endif
-ifdef CONFIG_CC_OPTIMIZE_MORE
+else
 KBUILD_CFLAGS += -O3 -fmodulo-sched -fmodulo-sched-allow-regmoves -fno-tree-vectorize -Wno-array-bounds
+KBUILD_CFLAGS += $(call cc-disable-warning,maybe-uninitialized) -fno-inline-functions
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
