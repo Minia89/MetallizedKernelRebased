@@ -246,8 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC = $(CCACHE) gcc
 HOSTCXX = $(CCACHE) g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -flto=4
-HOSTCXXFLAGS = -O3 -fno-tree-vectorize -flto=4
+HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -flto=4 -fgcse-las -fgraphite -fgraphite-identity -pipe -DNDEBUG -pthread -fstrict-aliasing -fuse-linker-plugin
+HOSTCXXFLAGS = -O3 -fno-tree-vectorize -fgcse-las -fgraphite -fgraphite-identity -pipe -DNDEBUG -pthread -fstrict-aliasing -fuse-linker-plugin -flto=4
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -357,7 +357,7 @@ CHECK		= sparse
 
 CHECKFLAGS := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 -Wbitwise -Wno-return-void $(CF)
-KERNELFLAGS = -Wall -munaligned-access -fforce-addr -fsingle-precision-constant -mcpu=cortex-a15 -mtune=cortex-a15 -marm -mfpu=neon-vfpv4 -fgcse-las
+KERNELFLAGS = -pipe -DNDEBUG -O3 -ffast-math -mtune=cortex-a15 -mcpu=cortex-a15 -marm -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad -munaligned-access -fgcse-lm -fgcse-sm -fsingle-precision-constant -fforce-addr -fsched-spec-load -fgraphite -fgraphite-identity
 MODFLAGS	= -DMODULE $(KERNELFLAGS)
 CFLAGS_MODULE = $(MODFLAGS)
 AFLAGS_MODULE = $(MODFLAGS)
@@ -380,10 +380,8 @@ KBUILD_CFLAGS := -DNDEBUG -Wundef -Wstrict-prototypes -Wno-trigraphs \
 -fno-strict-aliasing -fno-common \
 -Werror-implicit-function-declaration \
 -Wno-format-security -Wno-array-bounds \
--fno-delete-null-pointer-checks \
--mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -marm \
--ffast-math -fsingle-precision-constant \
--fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr
+-fno-delete-null-pointer-checks
+$(KERNELFLAGS)
 KBUILD_AFLAGS_KERNEL := $(KERNELFLAGS)
 KBUILD_CFLAGS_KERNEL := $(KERNELFLAGS)
 KBUILD_AFLAGS   := -D__ASSEMBLY__
