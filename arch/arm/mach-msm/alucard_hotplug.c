@@ -250,10 +250,7 @@ static void __ref hotplug_work_fn(struct work_struct *work)
 
 		/* get the cpu current frequency */
 		/* cur_freq = acpuclk_get_rate(cpu); */
-		if (!force_up)
- 			cur_freq = cpufreq_quick_get(cpu);
- 		else
- 			cur_freq = MAX_FREQ_LIMIT;
+		cur_freq = cpufreq_quick_get(cpu);
 
 		if (pcpu_info->cur_up_rate > pcpu_info->up_rate)
 			pcpu_info->cur_up_rate = 1;
