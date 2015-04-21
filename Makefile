@@ -380,7 +380,7 @@ KBUILD_CFLAGS := -DNDEBUG -Wundef -Wstrict-prototypes -Wno-trigraphs \
 -fno-strict-aliasing -fno-common \
 -Werror-implicit-function-declaration \
 -Wno-format-security -Wno-array-bounds \
--fno-delete-null-pointer-checks
+-fno-delete-null-pointer-checks \
 $(KERNELFLAGS)
 KBUILD_AFLAGS_KERNEL := $(KERNELFLAGS)
 KBUILD_CFLAGS_KERNEL := $(KERNELFLAGS)
