@@ -125,7 +125,7 @@ static inline void cpus_online_work(void)
 
 static inline void cpus_offline_work(void)
 {
-	struct hotplug_tunables = tunables;
+	struct hotplug_tunables;
 	unsigned int cpu;
 
 	for (cpu = 3; cpu > 1; cpu--) {
