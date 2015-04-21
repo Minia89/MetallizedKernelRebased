@@ -125,7 +125,7 @@ static inline void cpus_online_work(void)
 
 static inline void cpus_offline_work(void)
 {
-	struct hotplug_tunables = &tunables;
+	struct hotplug_tunables = tunables;
 	unsigned int cpu;
 
 	for (cpu = 3; cpu > 1; cpu--) {
@@ -225,7 +225,6 @@ static void __ref decide_hotplug_func(struct work_struct *work)
 {
 	struct hotplug_tunables *t = &tunables;
 	unsigned int cur_load = 0;
-	unsigned int cpu;
 	unsigned int online_cpus = num_online_cpus();
 
 	if (!t->enabled)
