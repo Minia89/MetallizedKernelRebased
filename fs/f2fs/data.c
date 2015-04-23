@@ -12,12 +12,12 @@
 #include <linux/f2fs_fs.h>
 #include <linux/buffer_head.h>
 #include <linux/mpage.h>
-#include <linux/aio.h>
 #include <linux/writeback.h>
 #include <linux/backing-dev.h>
 #include <linux/blkdev.h>
 #include <linux/bio.h>
 #include <linux/prefetch.h>
+#include <linux/uio.h>
 
 #include "f2fs.h"
 #include "node.h"
@@ -249,6 +249,19 @@ int f2fs_reserve_block(struct dnode_of_data *dn, pgoff_t index)
 	if (err || need_put)
 		f2fs_put_dnode(dn);
 	return err;
+}
+
+static void f2fs_map_bh(struct super_block *sb, pgoff_t pgofs,
+			struct extent_info *ei, struct buffer_head *bh_result)
+{
+	unsigned int blkbits = sb->s_blocksize_bits;
+	size_t max_size = bh_result->b_size;
+	size_t mapped_size;
+
+	clear_buffer_new(bh_result);
+	map_bh(bh_result, sb, ei->blk + pgofs - ei->fofs);
+	mapped_size = (ei->fofs + ei->len - pgofs) << blkbits;
+	bh_result->b_size = min(max_size, mapped_size);
 }
 
 static bool lookup_extent_info(struct inode *inode, pgoff_t pgofs,
