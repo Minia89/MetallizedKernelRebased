@@ -791,8 +791,7 @@ config SCHED_MC
 	  increased overhead in some places. If unsure say N here.
 
 config IRQ_TIME_ACCOUNTING
-	bool "Fine granularity task level IRQ time accounting"
-	default n
+	def_bool y
 
 source "kernel/Kconfig.preempt"
 
