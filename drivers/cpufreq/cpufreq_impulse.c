@@ -1469,12 +1469,6 @@ static void __exit cpufreq_impulse_exit(void)
 	cpufreq_unregister_governor(&cpufreq_gov_impulse);
 	kthread_stop(speedchange_task);
 	put_task_struct(speedchange_task);
-
-	for_each_possible_cpu(cpu) {
-		pcpu = &per_cpu(cpuinfo, cpu);
-		kfree(pcpu->cached_tunables);
-		pcpu->cached_tunables = NULL;
-	}
 }
 
 module_exit(cpufreq_impulse_exit);
