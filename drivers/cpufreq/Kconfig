@@ -129,6 +129,12 @@ config CPU_FREQ_DEFAULT_GOV_UBERDEMAND
 	select CPU_FREQ_GOV_PERFORMANCE
 	help
 
+config CPU_FREQ_DEFAULT_GOV_HYPER
+	bool "HYPER"
+	select CPU_FREQ_GOV_HYPER
+	---help---
+	  Use the CPUFreq governor 'HYPER' as default.
+
 config CPU_FREQ_DEFAULT_GOV_POWERSAVE
 	bool "powersave"
 	depends on EXPERT
@@ -240,6 +246,12 @@ config CPU_FREQ_GOV_UBERDEMAND
 	tristate "'uberdemand' cpufreq policy governor"
 	select CPU_FREQ_TABLE
 	help
+
+config CPU_FREQ_GOV_HYPER
+	tristate "'HYPER' cpufreq governor"
+	depends on CPU_FREQ
+	---help---
+	  'HYPER' - a tweaked "ondemand" based smart and smooth optimized governor!
 
 config CPU_FREQ_GOV_POWERSAVE
 	tristate "'powersave' governor"
