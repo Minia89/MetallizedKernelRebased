@@ -32,6 +32,9 @@
 #include <asm/cputime.h>
 
 static int active_count;
+#ifdef CONFIG_STATE_NOTIFIER
+#include <linux/state_notifier.h>
+#endif
 
 struct cpufreq_impulse_cpuinfo {
 	struct timer_list cpu_timer;
@@ -58,6 +61,11 @@ struct cpufreq_impulse_cpuinfo {
 
 static DEFINE_PER_CPU(struct cpufreq_impulse_cpuinfo, cpuinfo);
 
+#ifdef CONFIG_STATE_NOTIFIER
+static struct notifier_block notif;
+#endif
+static bool suspended;
+
 /* realtime thread handles frequency scaling */
 static struct task_struct *speedchange_task;
 static cpumask_t speedchange_cpumask;
@@ -69,7 +77,7 @@ static struct mutex gov_lock;
 static unsigned int hispeed_freq = DEFAULT_HISPEED_FREQ;
 
 /* Go to hi speed when CPU load at or above this value. */
-#define DEFAULT_GO_HISPEED_LOAD 95
+#define DEFAULT_GO_HISPEED_LOAD 99
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Go to lowest speed when CPU load at or below this value. */
@@ -86,13 +94,13 @@ static int ntarget_loads = ARRAY_SIZE(default_target_loads);
 /*
  * The minimum amount of time to spend at a frequency before we can ramp down.
  */
-#define DEFAULT_MIN_SAMPLE_TIME (40 * USEC_PER_MSEC)
+#define DEFAULT_MIN_SAMPLE_TIME (80 * USEC_PER_MSEC)
 static unsigned long min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
 
 /*
  * The sample rate of the timer used to increase frequency
  */
-#define DEFAULT_TIMER_RATE (30 * USEC_PER_MSEC)
+#define DEFAULT_TIMER_RATE (20 * USEC_PER_MSEC)
 static unsigned long timer_rate = DEFAULT_TIMER_RATE;
 
 /*
@@ -1365,6 +1373,25 @@ static int cpufreq_governor_impulse(struct cpufreq_policy *policy,
 	return 0;
 }
 
+#ifdef CONFIG_STATE_NOTIFIER
+static int state_notifier_callback(struct notifier_block *this,
+unsigned long event, void *data)
+{
+	switch (event) {
+		case STATE_NOTIFIER_ACTIVE:
+			suspended = false;
+			break;
+		case STATE_NOTIFIER_SUSPEND:
+			suspended = true;
+			break;
+		default:
+			break;
+	}
+
+	return NOTIFY_OK;
+}
+#endif
+
 #ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_IMPULSE
 static
 #endif
@@ -1414,6 +1441,12 @@ static int __init cpufreq_impulse_init(void)
 	/* NB: wake up so the thread does not look hung to the freezer */
 	wake_up_process(speedchange_task);
 
+#ifdef CONFIG_STATE_NOTIFIER
+	notif.notifier_call = state_notifier_callback;
+	if (state_register_client(&notif))
+		pr_err("Cannot register State notifier callback for impulse governor.\n");
+#endif
+
 	return cpufreq_register_governor(&cpufreq_gov_impulse);
 }
 
@@ -1425,9 +1458,23 @@ module_init(cpufreq_impulse_init);
 
 static void __exit cpufreq_impulse_exit(void)
 {
+
+	int cpu;
+	struct cpufreq_impulse_cpuinfo *pcpu;
+
+#ifdef CONFIG_STATE_NOTIFIER
+	state_unregister_client(&notif);
+#endif
+
 	cpufreq_unregister_governor(&cpufreq_gov_impulse);
 	kthread_stop(speedchange_task);
 	put_task_struct(speedchange_task);
+
+	for_each_possible_cpu(cpu) {
+		pcpu = &per_cpu(cpuinfo, cpu);
+		kfree(pcpu->cached_tunables);
+		pcpu->cached_tunables = NULL;
+	}
 }
 
 module_exit(cpufreq_impulse_exit);
