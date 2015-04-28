@@ -3049,6 +3049,14 @@ config KRAIT_REGULATOR
 	 regulators running in ganged mode inside the PMIC. Enable
 	 this option to support such configurations.
 
+endif
+
+config HAS_MACH_MEMUTILS
+	default n
+	bool "Motorola MSM memcpy enhancements"
+	help
+	Faster memcpy performance for Krait
+
 config BRICKED_HOTPLUG
 	bool "Enable kernel based mpdecision"
 	depends on MSM_RUN_QUEUE_STATS
@@ -3056,13 +3064,6 @@ config BRICKED_HOTPLUG
 	help
 	 This enables kernel based multi core control.
 	 (up/down hotplug based on load)
-
-config HAS_MACH_MEMUTILS
-	default n
-	bool "Motorola MSM memcpy enhancements"
-	help
-	Faster memcpy performance for Krait
-endif
 
 config MSM_HOTPLUG
 	bool "MSM hotplug driver"
