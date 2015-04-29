@@ -137,7 +137,7 @@ static int msm_cpufreq_verify(struct cpufreq_policy *policy)
 	return 0;
 }
 
-unsigned int msm_cpufreq_get_freq(unsigned int cpu)
+static unsigned int msm_cpufreq_get_freq(unsigned int cpu)
 {
 	return clk_get_rate(cpu_clk[cpu]) / 1000;
 }
@@ -542,3 +542,4 @@ static int __init msm_cpufreq_early_register(void)
 	return register_hotcpu_notifier(&msm_cpufreq_cpu_notifier);
 }
 core_initcall(msm_cpufreq_early_register);
+
