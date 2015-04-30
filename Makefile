@@ -244,10 +244,12 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
+GRAPHITE = -fgraphite -fgraphite-identity -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block -ftree-loop-linear -floop-nest-optimize
+
 HOSTCC = $(CCACHE) gcc
 HOSTCXX = $(CCACHE) g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -flto=4 -fgcse-las -fgraphite -fgraphite-identity -pipe -DNDEBUG -pthread -fstrict-aliasing -fuse-linker-plugin
-HOSTCXXFLAGS = -O3 -fno-tree-vectorize -fgcse-las -fgraphite -fgraphite-identity -pipe -DNDEBUG -pthread -fstrict-aliasing -fuse-linker-plugin -flto=4
+HOSTCFLAGS = -DNDEBUG -pipe -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -flto -fomit-frame-pointer $(GRAPHITE) -pthread
+HOSTCXXFLAGS = -DNDEBUG -pipe -O3 -flto $(GRAPHITE)
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -357,13 +359,13 @@ CHECK		= sparse
 
 CHECKFLAGS := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 -Wbitwise -Wno-return-void $(CF)
-KERNELFLAGS = -pipe -DNDEBUG -O3 -ffast-math -mtune=cortex-a15 -mcpu=cortex-a15 -marm -mfpu=neon-vfpv4 -ftree-vectorize -mvectorize-with-neon-quad -munaligned-access -fgcse-lm -fgcse-sm -fsingle-precision-constant -fforce-addr -fsched-spec-load -fgraphite -fgraphite-identity
-MODFLAGS	= -DMODULE $(KERNELFLAGS)
-CFLAGS_MODULE = $(MODFLAGS)
-AFLAGS_MODULE = $(MODFLAGS)
+KERNEL_FLAGS = -pipe -DNDEBUG -O3 -marm -mtune=cortex-a15 -mcpu=cortex-a15 -march=armv7ve -mfpu=neon-vfpv4 -fmodulo-sched -fmodulo-sched-allow-regmoves $(GRAPHITE)
+MOD_FLAGS	= -DMODULE -flto $(KERNEL_FLAGS)
+CFLAGS_MODULE = $(MOD_FLAGS)
+AFLAGS_MODULE = $(MOD_FLAGS)
 LDFLAGS_MODULE = -T $(srctree)/scripts/module-common.lds
-CFLAGS_KERNEL	= $(KERNELFLAGS)
-AFLAGS_KERNEL	= $(KERNELFLAGS)
+CFLAGS_KERNEL	= $(KERNEL_FLAGS)
+AFLAGS_KERNEL	= $(KERNEL_FLAGS)
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
@@ -374,19 +376,19 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    $(if $(KBUILD_SRC), -I$(srctree)/include) \
                    -include $(srctree)/include/linux/kconfig.h
 
-KBUILD_CPPFLAGS := -D__KERNEL__
+KBUILD_CPPFLAGS := -D__KERNEL__ $(KERNEL_FLAGS)
 
 KBUILD_CFLAGS := -DNDEBUG -Wundef -Wstrict-prototypes -Wno-trigraphs \
 -fno-strict-aliasing -fno-common \
 -Werror-implicit-function-declaration \
 -Wno-format-security -Wno-array-bounds \
 -fno-delete-null-pointer-checks \
-$(KERNELFLAGS)
-KBUILD_AFLAGS_KERNEL := $(KERNELFLAGS)
-KBUILD_CFLAGS_KERNEL := $(KERNELFLAGS)
+$(KERNEL_FLAGS)
+KBUILD_AFLAGS_KERNEL := $(KERNEL_FLAGS)
+KBUILD_CFLAGS_KERNEL := $(KERNEL_FLAGS)
 KBUILD_AFLAGS   := -D__ASSEMBLY__
-KBUILD_AFLAGS_MODULE  := $(MODFLAGS)
-KBUILD_CFLAGS_MODULE  := $(MODFLAGS)
+KBUILD_AFLAGS_MODULE  := $(MOD_FLAGS)
+KBUILD_CFLAGS_MODULE  := $(MOD_FLAGS)
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
