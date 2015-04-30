@@ -30,6 +30,12 @@
 
 #include "power.h"
 
+#ifdef CONFIG_PM_SYNC_BEFORE_SUSPEND
+static int suspendsync = 1;
+#else
+static int suspendsync;
+#endif
+
 const char *const pm_states[PM_SUSPEND_MAX] = {
 	[PM_SUSPEND_FREEZE]	= "freeze",
 	[PM_SUSPEND_STANDBY]	= "standby",
@@ -99,6 +105,28 @@ int suspend_valid_only_mem(suspend_state_t state)
 	return state == PM_SUSPEND_MEM;
 }
 EXPORT_SYMBOL_GPL(suspend_valid_only_mem);
+
+static bool platform_suspend_again(void)
+{
+	int count;
+	bool suspend = suspend_ops->suspend_again ?
+		suspend_ops->suspend_again() : false;
+
+	if (suspend) {
+		/*
+		 * pm_get_wakeup_count() gets an updated count of wakeup events
+		 * that have occured and will return false (i.e. abort suspend)
+		 * if a wakeup event has been started during suspend_again() and
+		 * is still active. pm_save_wakeup_count() stores the count
+		 * and enables pm_wakeup_pending() to properly analyze wakeup
+		 * events before entering suspend in suspend_enter().
+		 */
+		suspend = pm_get_wakeup_count(&count, false) &&
+			  pm_save_wakeup_count(count);
+	}
+
+	return suspend;
+}
 
 static int suspend_test(int level)
 {
@@ -268,7 +296,7 @@ int suspend_devices_and_enter(suspend_state_t state)
 	do {
 		error = suspend_enter(state, &wakeup);
 	} while (!error && !wakeup && need_suspend_ops(state)
-		&& suspend_ops->suspend_again && suspend_ops->suspend_again());
+		&& platform_suspend_again());
 
  Resume_devices:
 	suspend_test_start();
@@ -387,3 +415,12 @@ int pm_suspend(suspend_state_t state)
 	return error;
 }
 EXPORT_SYMBOL(pm_suspend);
+
+static int __init suspendsync_setup(char *str)
+{
+	suspendsync = simple_strtoul(str, NULL, 0);
+	return 1;
+}
+
+__setup("suspendsync=", suspendsync_setup);
+
