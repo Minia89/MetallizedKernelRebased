@@ -248,8 +248,8 @@ GRAPHITE = -fgraphite -fgraphite-identity -floop-interchange -ftree-loop-distrib
 
 HOSTCC = $(CCACHE) gcc
 HOSTCXX = $(CCACHE) g++
-HOSTCFLAGS = -DNDEBUG -pipe -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -flto -fomit-frame-pointer $(GRAPHITE) -pthread
-HOSTCXXFLAGS = -DNDEBUG -pipe -O3 -flto $(GRAPHITE)
+HOSTCFLAGS = -DNDEBUG -pipe -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -flto -fomit-frame-pointer $(GRAPHITE) -pthread
+HOSTCXXFLAGS = -DNDEBUG -pipe -Ofast -flto $(GRAPHITE)
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -359,7 +359,7 @@ CHECK		= sparse
 
 CHECKFLAGS := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 -Wbitwise -Wno-return-void $(CF)
-KERNEL_FLAGS = -pipe -DNDEBUG -O3 -marm -mtune=cortex-a15 -mcpu=cortex-a15 -march=armv7ve -mfpu=neon-vfpv4 -fmodulo-sched -fmodulo-sched-allow-regmoves $(GRAPHITE)
+KERNEL_FLAGS = -pipe -DNDEBUG -Ofast -marm -mtune=cortex-a15 -mcpu=cortex-a15 -march=armv7ve -mfpu=neon-vfpv4 -fmodulo-sched -fmodulo-sched-allow-regmoves $(GRAPHITE)
 MOD_FLAGS	= -DMODULE -flto $(KERNEL_FLAGS)
 CFLAGS_MODULE = $(MOD_FLAGS)
 AFLAGS_MODULE = $(MOD_FLAGS)
@@ -588,7 +588,7 @@ ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 endif
 ifdef CONFIG_CC_OPTIMIZE_MORE
-KBUILD_CFLAGS += -O3 -fmodulo-sched -fmodulo-sched-allow-regmoves -fno-tree-vectorize
+KBUILD_CFLAGS += -Ofast -fmodulo-sched -fmodulo-sched-allow-regmoves -fno-tree-vectorize
 KBUILD_CFLAGS += $(call cc-disable-warning,maybe-uninitialized) -fno-inline-functions
 endif
 
