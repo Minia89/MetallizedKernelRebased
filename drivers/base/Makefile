@@ -1,5 +1,4 @@
 # Makefile for the Linux device tree
-CFLAGS_core.o := -fno-strict-aliasing
 
 obj-y			:= core.o bus.o dd.o syscore.o \
 			   driver.o class.o platform.o \
