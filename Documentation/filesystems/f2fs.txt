@@ -144,6 +144,8 @@ extent_cache           Enable an extent cache based on rb-tree, it can cache
                        as many as extent which map between contiguous logical
                        address and physical address per inode, resulting in
                        increasing the cache hit ratio.
+noinline_data          Disable the inline data feature, inline data feature is
+                       enabled by default.
 
 ================================================================================
 DEBUGFS ENTRIES
@@ -572,3 +574,4 @@ algorithm.
 In order to identify whether the data in the victim segment are valid or not,
 F2FS manages a bitmap. Each bit represents the validity of a block, and the
 bitmap is composed of a bit stream covering whole blocks in main area.
+
