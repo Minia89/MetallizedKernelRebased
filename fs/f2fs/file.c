@@ -452,12 +452,8 @@ int truncate_data_blocks_range(struct dnode_of_data *dn, int count)
 			continue;
 
 		dn->data_blkaddr = NULL_ADDR;
-		set_data_blkaddr(dn);
 		f2fs_update_extent_cache(dn);
 		invalidate_blocks(sbi, blkaddr);
-		if (dn->ofs_in_node == 0 && IS_INODE(dn->node_page))
-			clear_inode_flag(F2FS_I(dn->inode),
-						FI_FIRST_BLOCK_WRITTEN);
 		nr_free++;
 	}
 	if (nr_free) {
@@ -477,16 +473,15 @@ void truncate_data_blocks(struct dnode_of_data *dn)
 	truncate_data_blocks_range(dn, ADDRS_PER_BLOCK);
 }
 
-static int truncate_partial_data_page(struct inode *inode, u64 from,
-								bool force)
+static int truncate_partial_data_page(struct inode *inode, u64 from)
 {
 	unsigned offset = from & (PAGE_CACHE_SIZE - 1);
 	struct page *page;
 
-	if (!offset && !force)
+	if (!offset)
 		return 0;
 
-	page = find_data_page(inode, from >> PAGE_CACHE_SHIFT, force);
+	page = find_data_page(inode, from >> PAGE_CACHE_SHIFT, false);
 	if (IS_ERR(page))
 		return 0;
 
@@ -497,8 +492,7 @@ static int truncate_partial_data_page(struct inode *inode, u64 from,
 
 	f2fs_wait_on_page_writeback(page, DATA);
 	zero_user(page, offset, PAGE_CACHE_SIZE - offset);
-	if (!force)
-		set_page_dirty(page);
+	set_page_dirty(page);
 out:
 	f2fs_put_page(page, 1);
 	return 0;
@@ -512,7 +506,6 @@ int truncate_blocks(struct inode *inode, u64 from, bool lock)
 	pgoff_t free_from;
 	int count = 0, err = 0;
 	struct page *ipage;
-	bool truncate_page = false;
 
 	trace_f2fs_truncate_blocks_enter(inode, from);
 
@@ -528,10 +521,7 @@ int truncate_blocks(struct inode *inode, u64 from, bool lock)
 	}
 
 	if (f2fs_has_inline_data(inode)) {
-		if (truncate_inline_inode(ipage, from))
-			set_page_dirty(ipage);
 		f2fs_put_page(ipage, 1);
-		truncate_page = true;
 		goto out;
 	}
 
@@ -562,7 +552,7 @@ out:
 
 	/* lastly zero out the first data page */
 	if (!err)
-		err = truncate_partial_data_page(inode, from, truncate_page);
+		err = truncate_partial_data_page(inode, from);
 
 	trace_f2fs_truncate_blocks_exit(inode, err);
 	return err;
@@ -1025,9 +1015,6 @@ static int f2fs_ioc_release_volatile_write(struct file *filp)
 	if (!f2fs_is_volatile_file(inode))
 		return 0;
 
-	if (!f2fs_is_first_block_written(inode))
-		return truncate_partial_data_page(inode, 0, true);
-
 	punch_hole(inode, 0, F2FS_BLKSIZE);
 	return 0;
 }
@@ -1074,19 +1061,19 @@ static int f2fs_ioc_shutdown(struct file *filp, unsigned long arg)
 		return -EFAULT;
 
 	switch (in) {
-	case F2FS_GOING_DOWN_FULLSYNC:
+	case FS_GOING_DOWN_FULLSYNC:
 		sb = freeze_bdev(sb->s_bdev);
 		if (sb && !IS_ERR(sb)) {
 			f2fs_stop_checkpoint(sbi);
 			thaw_bdev(sb->s_bdev, sb);
 		}
 		break;
-	case F2FS_GOING_DOWN_METASYNC:
+	case FS_GOING_DOWN_METASYNC:
 		/* do checkpoint only */
 		f2fs_sync_fs(sb, 1);
 		f2fs_stop_checkpoint(sbi);
 		break;
-	case F2FS_GOING_DOWN_NOSYNC:
+	case FS_GOING_DOWN_NOSYNC:
 		f2fs_stop_checkpoint(sbi);
 		break;
 	default:
@@ -1144,7 +1131,7 @@ long f2fs_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return f2fs_ioc_release_volatile_write(filp);
 	case F2FS_IOC_ABORT_VOLATILE_WRITE:
 		return f2fs_ioc_abort_volatile_write(filp);
-	case F2FS_IOC_SHUTDOWN:
+	case FS_IOC_SHUTDOWN:
 		return f2fs_ioc_shutdown(filp, arg);
 	case FITRIM:
 		return f2fs_ioc_fitrim(filp, arg);
@@ -1188,4 +1175,3 @@ const struct file_operations f2fs_file_operations = {
 	.splice_read	= generic_file_splice_read,
 	.splice_write	= generic_file_splice_write,
 };
-
