@@ -12,6 +12,7 @@
 # lastly SCSI peripheral drivers (disk/tape/cdrom/etc.) to
 # satisfy certain initialization assumptions in the SCSI layer.
 # *!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!*!
+CFLAGS_KERNEL := -fno-strict-aliasing
 
 
 CFLAGS_aha152x.o =   -DAHA152X_STAT -DAUTOCONF
