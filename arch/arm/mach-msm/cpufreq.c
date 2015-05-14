@@ -242,8 +242,6 @@ static int msm_cpufreq_cpu_callback(struct notifier_block *nfb,
 			clk_unprepare(l2_clk);
 			return NOTIFY_BAD;
 		}
-
-		update_l2_bw(&cpu);
 		break;
 
 	case CPU_STARTING:
