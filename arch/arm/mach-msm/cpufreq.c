@@ -242,6 +242,7 @@ static int msm_cpufreq_cpu_callback(struct notifier_block *nfb,
 			clk_unprepare(l2_clk);
 			return NOTIFY_BAD;
 		}
+
 		update_l2_bw(&cpu);
 		break;
 
@@ -532,7 +533,6 @@ static int __init msm_cpufreq_register(void)
 		return rc;
 	}
 
-	msm_cpufreq_wq = alloc_workqueue("msm-cpufreq", WQ_HIGHPRI, 0);
 	register_pm_notifier(&msm_cpufreq_pm_notifier);
 	return cpufreq_register_driver(&msm_cpufreq_driver);
 }
