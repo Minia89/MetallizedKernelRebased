@@ -30,7 +30,7 @@
 #define DEF_MAX_ONLINE			4
 #define DEF_DOWN_COUNT_MAX		10 /* 1 sec */
 #define DEF_UP_COUNT_MAX		4 /* 0.4 sec */
-#define DEF_SUSPEND_MAX_ONLINE		2
+#define DEF_SUSPEND_MAX_ONLINE		1
 
 struct msm_sleeper_data {
 	unsigned int enabled;
