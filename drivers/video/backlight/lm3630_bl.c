@@ -31,11 +31,11 @@
 #ifdef CONFIG_MACH_OPPO
 #include <linux/boot_mode.h>
 #endif //CONFIG_MACH_OPPO
-
 #ifdef CONFIG_STATE_NOTIFIER
 #include <linux/state_notifier.h>
 #ifdef CONFIG_LCD_NOTIFY
 #include <linux/lcd_notify.h>
+#endif
 #endif
 
 #define REG_CTRL	0x00
