@@ -3002,10 +3002,10 @@ config MSM_CPU_PWRCTL
 	  ensures that they are always off.
 
 config MSM_SLEEPER
-	bool "CPU hotplug driver"
+	bool "Limit max frequency while screen is off"
 	default y
 	help
-	  CPU hotplug driver 
+	  Limit max frequency while screen is off 
 
 config MSM_UARTDM_Core_v14
 	bool "Use MSM BLSP based HSUART Core v1.4"
