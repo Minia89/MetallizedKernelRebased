@@ -344,9 +344,14 @@ int cpufreq_get_min(unsigned int cpu);
 #endif
 
 #ifdef CONFIG_CPU_FREQ
+unsigned int cpufreq_quick_get_util(unsigned int cpu);
 /* query the current CPU frequency (in kHz). If zero, cpufreq couldn't detect it */
 unsigned int cpufreq_get(unsigned int cpu);
 #else
++static inline unsigned int cpufreq_quick_get_util(unsigned int cpu)
+{
+	return 0;
+}
 static inline unsigned int cpufreq_get(unsigned int cpu)
 {
 	return 0;

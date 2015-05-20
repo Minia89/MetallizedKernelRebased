@@ -3066,7 +3066,7 @@ config HAS_MACH_MEMUTILS
 config BRICKED_HOTPLUG
 	bool "Enable kernel based mpdecision"
 	depends on MSM_RUN_QUEUE_STATS
-	default n
+	default y
 	help
 	 This enables kernel based multi core control.
 	 (up/down hotplug based on load)
@@ -3074,7 +3074,7 @@ config BRICKED_HOTPLUG
 config MSM_HOTPLUG
 	bool "MSM hotplug driver"
 	depends on HOTPLUG_CPU
-	default y
+	default n
 	help
 	  The MSM hotplug driver controls on-/offlining of additional cores based
 	  on current cpu load.
@@ -3085,3 +3085,9 @@ config MSM_LIMITER
 	help
 	  The MSM Frequency Limiter Driver controls max frequency limit for each 		  CPU
 	  to desired value on suspend/resume
+
+config MSM_SLEEPER
+	bool "Limit max frequency and shut off cores while screen is off"
+	default n
+	help
+  	  Limit max frequency and shut off cores while screen is off 
