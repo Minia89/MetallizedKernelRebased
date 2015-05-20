@@ -27,18 +27,18 @@
 
 #define INTELLI_PLUG			"intelli_plug"
 #define INTELLI_PLUG_MAJOR_VERSION	5
-#define INTELLI_PLUG_MINOR_VERSION	1
+#define INTELLI_PLUG_MINOR_VERSION	4
 
-#define DEF_SAMPLING_MS			268
+#define DEF_SAMPLING_MS			30
 #define RESUME_SAMPLING_MS		HZ / 10
-#define START_DELAY_MS			HZ * 20
+#define START_DELAY_MS			HZ * 10
 #define MIN_INPUT_INTERVAL		150 * 1000L
-#define BOOST_LOCK_DUR			2500 * 1000L
-#define DEFAULT_NR_CPUS_BOOSTED		1
+#define BOOST_LOCK_DUR			500 * 1000L
+#define DEFAULT_NR_CPUS_BOOSTED		2
 #define DEFAULT_MIN_CPUS_ONLINE		1
 #define DEFAULT_MAX_CPUS_ONLINE		NR_CPUS
 #define DEFAULT_NR_FSHIFT		DEFAULT_MAX_CPUS_ONLINE - 1
-#define DEFAULT_DOWN_LOCK_DUR		2500
+#define DEFAULT_DOWN_LOCK_DUR		2000
 #define DEFAULT_SUSPEND_DEFER_TIME	10
 #define DEFAULT_MAX_CPUS_ONLINE_SUSP	1
 
@@ -54,7 +54,8 @@ defined (CONFIG_ARCH_MSM8610) || defined (CONFIG_ARCH_MSM8228)
 #else
 #define THREAD_CAPACITY			(250 - CAPACITY_RESERVE)
 #endif
-#define CPU_NR_THRESHOLD		((THREAD_CAPACITY << 1) + (THREAD_CAPACITY / 2))
+#define CPU_NR_THRESHOLD	((THREAD_CAPACITY << 1) + \
+				(THREAD_CAPACITY / 2))
 #define MULT_FACTOR			4
 #define DIV_FACTOR			100000
 
@@ -86,7 +87,11 @@ static bool hotplug_suspended = false;
 unsigned int suspend_defer_time = DEFAULT_SUSPEND_DEFER_TIME;
 static unsigned int min_cpus_online_res = DEFAULT_MIN_CPUS_ONLINE;
 static unsigned int max_cpus_online_res = DEFAULT_MAX_CPUS_ONLINE;
-static unsigned int max_cpus_online_susp = DEFAULT_MAX_CPUS_ONLINE_SUSP;
+/*
+* suspend mode, if set = 1 hotplug will sleep,
+* if set = 0, then hoplug will be active all the time.
+*/
+static unsigned int hotplug_suspend = 0;
 
 /* HotPlug Driver Tuning */
 static unsigned int target_cpus = 0;
@@ -274,7 +279,7 @@ static void __ref cpu_up_down_work(struct work_struct *work)
 
 static void intelli_plug_work_fn(struct work_struct *work)
 {
-	if (hotplug_suspended && max_cpus_online_susp <= 1) {
+	if (hotplug_suspended) {
 		dprintk("intelli_plug is suspended!\n");
 		return;
 	}
@@ -287,10 +292,11 @@ static void intelli_plug_work_fn(struct work_struct *work)
 					msecs_to_jiffies(def_sampling_ms));
 }
 
-static void intelli_plug_suspend(struct work_struct *work)
+static void __ref intelli_plug_suspend(struct work_struct *work)
 {
-	int cpu = 0;
+	int cpu;
 
+	if (hotplug_suspended == false) {
 	mutex_lock(&intelli_plug_mutex);
 	hotplug_suspended = true;
 	min_cpus_online_res = min_cpus_online;
@@ -298,11 +304,6 @@ static void intelli_plug_suspend(struct work_struct *work)
 	max_cpus_online_res = max_cpus_online;
 	max_cpus_online = max_cpus_online_susp;
 	mutex_unlock(&intelli_plug_mutex);
-
-	/* Do not cancel hotplug work unless max_cpus_online_susp is 1 */
-	if (max_cpus_online_susp > 1 &&
-		full_mode_profile != 3)
-		return;
 
 	/* Flush hotplug workqueue */
 	flush_workqueue(intelliplug_wq);
@@ -313,6 +314,8 @@ static void intelli_plug_suspend(struct work_struct *work)
 		if (cpu == 0)
 			continue;
 		cpu_down(cpu);
+	}
+	dprintk("%s: suspended!\n", INTELLI_PLUG);
 	}
 }
 
@@ -328,11 +331,9 @@ static void __ref intelli_plug_resume(struct work_struct *work)
 		mutex_unlock(&intelli_plug_mutex);
 		required_wakeup = 1;
 		/* Initiate hotplug work if it was cancelled */
-		if (max_cpus_online_susp <= 1 ||
-			full_mode_profile == 3) {
-			required_reschedule = 1;
-			INIT_DELAYED_WORK(&intelli_plug_work, intelli_plug_work_fn);
-		}
+		required_reschedule = 1;
+		INIT_DELAYED_WORK(&intelli_plug_work, intelli_plug_work_fn);
+		dprintk("%s: resumed.\n", INTELLI_PLUG);
 	}
 
 	if (wakeup_boost || required_wakeup) {
@@ -343,6 +344,7 @@ static void __ref intelli_plug_resume(struct work_struct *work)
 			cpu_up(cpu);
 			apply_down_lock(cpu);
 		}
+	dprintk("%s: wakeup boosted.\n", INTELLI_PLUG);
 	}
 
 	/* Resume hotplug workqueue if required */
