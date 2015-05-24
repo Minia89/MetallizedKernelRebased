@@ -1,7 +1,6 @@
 #
 # Makefile for the linux kernel.
 #
-CFLAGS_KERNEL := -fno-strict-aliasing
 
 obj-y                          := main.o version.o mounts.o
 ifneq ($(CONFIG_BLK_DEV_INITRD),y)

@@ -1,7 +1,6 @@
 #
 # Makefile for the Linux Bluetooth HCI device drivers.
 #
-CFLAGS_KERNEL := -fno-strict-aliasing
 
 obj-$(CONFIG_BT_HCISMD)		+= hci_smd.o
 obj-$(CONFIG_BT_HCIVHCI)	+= hci_vhci.o

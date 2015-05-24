@@ -1,7 +1,6 @@
 #
 # Makefile for the MSM specific device drivers.
 #
-CFLAGS_KERNEL := -fno-strict-aliasing
 
 ccflags-y += -Idrivers/misc/
 ccflags-y += -Isecurity/selinux -Isecurity/selinux/include

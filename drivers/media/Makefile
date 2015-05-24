@@ -1,7 +1,6 @@
 #
 # Makefile for the kernel multimedia device drivers.
 #
-CFLAGS_KERNEL := -fno-strict-aliasing
 
 media-objs	:= media-device.o media-devnode.o media-entity.o
 

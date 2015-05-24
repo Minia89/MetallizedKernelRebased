@@ -1,7 +1,6 @@
 #
 # Makefile for sensor chip drivers.
 #
-CFLAGS_KERNEL := -fno-strict-aliasing
 
 obj-$(CONFIG_THERMAL)		+= thermal_sys.o
 obj-$(CONFIG_THERMAL_MSM_POPMEM)	+= msm_popmem-tm.o
