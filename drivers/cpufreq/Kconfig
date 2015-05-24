@@ -145,6 +145,11 @@ config CPU_FREQ_DEFAULT_GOV_BARRY_ALLEN
 	select CPU_FREQ_GOV_BARRY_ALLEN
 	help
 
+config CPU_FREQ_DEFAULT_GOV_BLU_ACTIVE
+	bool "blu_active"
+	select CPU_FREQ_GOV_BLU_ACTIVE
+	help
+
 config CPU_FREQ_DEFAULT_GOV_POWERSAVE
 	bool "powersave"
 	depends on EXPERT
@@ -270,6 +275,10 @@ config CPU_FREQ_GOV_NIGHTMARE
 config CPU_FREQ_GOV_BARRY_ALLEN
 	tristate "'barry_allen' cpufreq policy governor"
 	help
+
+config CPU_FREQ_GOV_BLU_ACTIVE
+	tristate "'blu_active' cpufreq governor"
+	depends on CPU_FREQ
 
 config CPU_FREQ_GOV_POWERSAVE
 	tristate "'powersave' governor"
