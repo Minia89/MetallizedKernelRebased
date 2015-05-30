@@ -225,7 +225,7 @@ static void __ref bricked_hotplug_work(struct work_struct *work) {
 	case MSM_MPDEC_DOWN:
 		cpu = get_slowest_cpu();
 		if (cpu > 0) {
-			if (cpu_online(cpu)
+			if (cpu_online(cpu) && !check_cpuboost(cpu)
 					&& !check_down_lock(cpu))
 				cpu_down(cpu);
 		}
@@ -299,7 +299,7 @@ static void __ref bricked_hotplug_resume(struct work_struct *work)
 		}
 	}
 
-	if (required_wakeup) {
+	if (wakeup_boost || required_wakeup) {
 		/* Fire up all CPUs */
 		for_each_cpu_not(cpu, cpu_online_mask) {
 			if (cpu == 0)
