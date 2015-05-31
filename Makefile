@@ -383,6 +383,7 @@ KBUILD_CFLAGS := -DNDEBUG -Wundef -Wstrict-prototypes -Wno-trigraphs \
 -Werror-implicit-function-declaration \
 -Wno-format-security -Wno-array-bounds \
 -fno-delete-null-pointer-checks \
+-Wall \
 $(KERNEL_FLAGS)
 KBUILD_AFLAGS_KERNEL := $(KERNEL_FLAGS)
 KBUILD_CFLAGS_KERNEL := $(KERNEL_FLAGS)
