@@ -8,12 +8,10 @@
  * published by the Free Software Foundation.
  *
  * ZZMoove Governor profiles header file modified by Zane Zaminsky 2013/14
-<<<<<<< HEAD
  */
 
 // NOTE: profile values in this version are mainly for One Plus One devices but might be compatible with other qualcomm devices too!
 static char profiles_file_version[20] = "0.3 beta3 OPO";
-=======
  *
  * Changelog:
  *
@@ -149,7 +147,6 @@ static char profiles_file_version[20] = "0.3 beta3 OPO";
 
 // NOTE: profile values in this version are mainly for One Plus One devices but might be compatible with other qualcomm devices too!
 static char profiles_file_version[20] = "0.3 beta7 OPO";
->>>>>>> 00fc14e... cpufreq: Update to zzmoove 1.0-beta7 (sync) governor
 #define PROFILE_TABLE_END ~1
 #define END_OF_PROFILES "end"
 #define PROFILE_MAX_FREQ (2880000)	// ZZ: max possible freq in system table for freq adaption (possible OC frequencies inclusive)
@@ -1276,13 +1273,8 @@ struct zzmoove_profile zzmoove_profiles[] = {
 		0,		// down_threshold_hotplug_freq7
 #endif
 #endif
-<<<<<<< HEAD
-#if defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) || defined(CONFIG_BACKLIGHT_EXT_CONTROL)
-		59,		// down_threshold_sleep
-=======
 #if defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) || defined(USE_LCD_NOTIFIER)
 		55,		// down_threshold_sleep
->>>>>>> 00fc14e... cpufreq: Update to zzmoove 1.0-beta7 (sync) governor
 #endif
 		1,		// early_demand
 #if defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) || defined(CONFIG_BACKLIGHT_EXT_CONTROL)
