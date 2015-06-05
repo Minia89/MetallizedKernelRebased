@@ -250,7 +250,9 @@ static char custom_profile[20] = "custom";			// ZZ: name to show in sysfs if any
 // ff: Music Detection defaults
 #define DEF_MUSIC_MAX_FREQ				(0)	// ff: default maximum freq to maintain while music is on
 #define DEF_MUSIC_MIN_FREQ				(0)	// ff: default minimum freq to maintain while music is on
+#ifdef ENABLE_HOTPLUGGING
 #define DEF_MUSIC_MIN_CORES				(2)	// ZZ: default minimum cores online while music is on
+#endif
 
 // ZZ: Sampling Down Momentum variables
 static unsigned int min_sampling_rate;				// ZZ: minimal possible sampling rate
@@ -373,10 +375,6 @@ static bool temp_down_threshold_hotplug_freq7_flag = false;
 static unsigned int temp_inputboost_punch_freq = 0;
 static bool temp_inputboost_punch_freq_flag = false;
 #endif
-static unsigned int temp_music_min_freq = 0;
-static bool temp_music_min_freq_flag = false;
-static unsigned int temp_music_max_freq = 0;
-static bool temp_music_max_freq_flag = false;
 
 // ZZ: hotplug load thresholds array
 static int hotplug_thresholds[2][8] = {
@@ -396,6 +394,11 @@ static int hotplug_freq_threshold_out_of_range[2][8] = {
     { 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 }
     };
 #endif /* ENABLE_HOTPLUGGING */
+
+static unsigned int temp_music_min_freq = 0;
+static bool temp_music_min_freq_flag = false;
+static unsigned int temp_music_max_freq = 0;
+static bool temp_music_max_freq_flag = false;
 
 // ZZ: core on which we currently run
 static unsigned int on_cpu = 0;
@@ -675,9 +678,11 @@ static struct dbs_tuners {
 
 	// ff: Music Detection
 	unsigned int music_max_freq;				// ff: music max freq
-	unsigned int music_min_freq;				// ff: music min freq
-	unsigned int music_min_cores;				// ff: music min freq
-	unsigned int music_state;				// ff: music state
+	unsigned int music_min_freq;	            		// ff: music min freq
+	#ifdef ENABLE_HOTPLUGGING
+        unsigned int music_min_cores;				// ff: music min freq
+	#endif
+        unsigned int music_state;				// ff: music state
 
 // ZZ: set tuneable default values
 } dbs_tuners_ins = {
@@ -826,11 +831,13 @@ static struct dbs_tuners {
 	.inputboost_punch_on_epenmove = DEF_INPUTBOOST_PUNCH_ON_EPENMOVE,
 	.inputboost_typingbooster_up_threshold = DEF_INPUTBOOST_TYPINGBOOSTER_UP_THRESHOLD,
 	.inputboost_typingbooster_cores = DEF_INPUTBOOST_TYPINGBOOSTER_CORES,
+#endif /* ENABLE_INPUTBOOSTER */
 	.music_max_freq = DEF_MUSIC_MAX_FREQ,
 	.music_min_freq = DEF_MUSIC_MIN_FREQ,
+#ifdef ENABLE_HOTPLUGGING 
 	.music_min_cores = DEF_MUSIC_MIN_CORES,
+#endif /* ENABLE_HOTPLUGGING */
 	.music_state = 0,
-#endif /* ENABLE_INPUTBOOSTER */
 };
 
 #ifdef ENABLE_INPUTBOOSTER
@@ -2184,7 +2191,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 		 */
 		if (unlikely(pol_max < dbs_tuners_ins.up_threshold_hotplug_freq1
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.up_threshold_hotplug_freq1
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.up_threshold_hotplug_freq1
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.up_threshold_hotplug_freq1
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.up_threshold_hotplug_freq1)) {
 		    hotplug_freq_threshold_out_of_range[0][0] = 1;
@@ -2194,7 +2203,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 #if (MAX_CORES == 4 || MAX_CORES == 8)
 		if  (unlikely(pol_max < dbs_tuners_ins.up_threshold_hotplug_freq2
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.up_threshold_hotplug_freq2
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.up_threshold_hotplug_freq2
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.up_threshold_hotplug_freq2
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.up_threshold_hotplug_freq2)) {
 		    hotplug_freq_threshold_out_of_range[0][1] = 1;
@@ -2204,7 +2215,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 
 		if  (unlikely(pol_max < dbs_tuners_ins.up_threshold_hotplug_freq3
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.up_threshold_hotplug_freq3
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.up_threshold_hotplug_freq3
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.up_threshold_hotplug_freq3
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.up_threshold_hotplug_freq3)) {
 		    hotplug_freq_threshold_out_of_range[0][2] = 1;
@@ -2215,7 +2228,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 #if (MAX_CORES == 8)
 		if  (unlikely(pol_max < dbs_tuners_ins.up_threshold_hotplug_freq4
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.up_threshold_hotplug_freq4
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.up_threshold_hotplug_freq4
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.up_threshold_hotplug_freq4
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.up_threshold_hotplug_freq4)) {
 		    hotplug_freq_threshold_out_of_range[0][3] = 1;
@@ -2225,7 +2240,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 
 		if  (unlikely(pol_max < dbs_tuners_ins.up_threshold_hotplug_freq5
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.up_threshold_hotplug_freq5
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.up_threshold_hotplug_freq5
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.up_threshold_hotplug_freq5
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.up_threshold_hotplug_freq5)) {
 		    hotplug_freq_threshold_out_of_range[0][4] = 1;
@@ -2235,7 +2252,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 
 		if  (unlikely(pol_max < dbs_tuners_ins.up_threshold_hotplug_freq6
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.up_threshold_hotplug_freq6
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.up_threshold_hotplug_freq6
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.up_threshold_hotplug_freq6
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.up_threshold_hotplug_freq6)) {
 		    hotplug_freq_threshold_out_of_range[0][5] = 1;
@@ -2245,7 +2264,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 
 		if  (unlikely(pol_max < dbs_tuners_ins.up_threshold_hotplug_freq7
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.up_threshold_hotplug_freq7
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.up_threshold_hotplug_freq7
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.up_threshold_hotplug_freq7
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.up_threshold_hotplug_freq7)) {
 		    hotplug_freq_threshold_out_of_range[0][6] = 1;
@@ -2255,7 +2276,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 #endif
 		if  (unlikely(pol_max < dbs_tuners_ins.down_threshold_hotplug_freq1
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.down_threshold_hotplug_freq1
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.down_threshold_hotplug_freq1
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.down_threshold_hotplug_freq1
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.down_threshold_hotplug_freq1)) {
 		    hotplug_freq_threshold_out_of_range[1][0] = 1;
@@ -2265,7 +2288,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 #if (MAX_CORES == 4 || MAX_CORES == 8)
 		if  (unlikely(pol_max < dbs_tuners_ins.down_threshold_hotplug_freq2
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.down_threshold_hotplug_freq2
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.down_threshold_hotplug_freq2
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.down_threshold_hotplug_freq2
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.down_threshold_hotplug_freq2 )) {
 		    hotplug_freq_threshold_out_of_range[1][1] = 1;
@@ -2275,7 +2300,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 
 		if  (unlikely(pol_max < dbs_tuners_ins.down_threshold_hotplug_freq3
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.down_threshold_hotplug_freq3
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.down_threshold_hotplug_freq3
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.down_threshold_hotplug_freq3
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.down_threshold_hotplug_freq3)) {
 		    hotplug_freq_threshold_out_of_range[1][2] = 1;
@@ -2286,7 +2313,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 #if (MAX_CORES == 8)
 		if  (unlikely(pol_max < dbs_tuners_ins.down_threshold_hotplug_freq4
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.down_threshold_hotplug_freq4
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.down_threshold_hotplug_freq4
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.down_threshold_hotplug_freq4
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.down_threshold_hotplug_freq4)) {
 		    hotplug_freq_threshold_out_of_range[1][3] = 1;
@@ -2296,7 +2325,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 
 		if  (unlikely(pol_max < dbs_tuners_ins.down_threshold_hotplug_freq5
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.down_threshold_hotplug_freq5
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.down_threshold_hotplug_freq5
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.down_threshold_hotplug_freq5
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.down_threshold_hotplug_freq5)) {
 		    hotplug_freq_threshold_out_of_range[1][4] = 1;
@@ -2306,7 +2337,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 
 		if  (unlikely(pol_max < dbs_tuners_ins.down_threshold_hotplug_freq6
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.down_threshold_hotplug_freq6
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.down_threshold_hotplug_freq6
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.down_threshold_hotplug_freq6
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.down_threshold_hotplug_freq6)) {
 		    hotplug_freq_threshold_out_of_range[1][5] = 1;
@@ -2316,7 +2349,9 @@ static inline void adjust_freq_thresholds(unsigned int step)
 
 		if  (unlikely(pol_max < dbs_tuners_ins.down_threshold_hotplug_freq7
 		    || dbs_tuners_ins.freq_limit < dbs_tuners_ins.down_threshold_hotplug_freq7
+#if (defined(CONFIG_HAS_EARLYSUSPEND) || defined(CONFIG_POWERSUSPEND) && !defined (DISABLE_POWER_MANAGEMENT)) || defined(USE_LCD_NOTIFIER)
 		    || dbs_tuners_ins.freq_limit_sleep < dbs_tuners_ins.down_threshold_hotplug_freq7
+#endif
 		    || dbs_tuners_ins.music_max_freq < dbs_tuners_ins.down_threshold_hotplug_freq7
 		    || dbs_tuners_ins.music_min_freq > dbs_tuners_ins.down_threshold_hotplug_freq7)) {
 		    hotplug_freq_threshold_out_of_range[1][6] = 1;
@@ -2574,7 +2609,9 @@ show_one(inputboost_typingbooster_cores, inputboost_typingbooster_cores);		// ff
 #endif
 show_one(music_max_freq, music_max_freq);						// ff: music max frequency
 show_one(music_min_freq, music_min_freq);						// ff: music min frequency
+#ifdef ENABLE_HOTPLUGGING
 show_one(music_min_cores, music_min_cores);						// ZZ: music min online cores
+#endif
 show_one(music_state, music_state);							// ff: music state
 
 // ZZ: tuneable for showing the currently active governor settings profile
@@ -4587,11 +4624,13 @@ static ssize_t store_music_state(struct kobject *a, struct attribute *b, const c
 
 	if (input > 0) {
 
+#ifdef ENABLE_HOTPLUGGING
 		// ZZ: if music min cores are set apply core setting
 		if (dbs_tuners_ins.music_min_cores > 0) {
 			enable_cores = 1;
 			queue_work_on(0, dbs_wq, &hotplug_online_work);
 		}
+#endif
 
 		// ZZ: if music min limit is set change scaling min limit on ascending ordered table
 		if (dbs_tuners_ins.music_min_freq && !freq_table_desc) {
@@ -4620,7 +4659,9 @@ static inline int set_profile(int profile_num)
 {
 	int i = 0;					// ZZ: for main profile loop
 	int t = 0;					// ZZ: for sub-loop
-	int rc = 0;					// ZZ: for impubooster registering
+#ifdef ENABLE_INPUTBOOSTER
+       int rc = 0;					// ZZ: for impubooster registering
+#endif
 	unsigned int j;					// ZZ: for update routines
 
 	set_profile_active = true;			// ZZ: avoid additional setting of tuneables during following loop
@@ -5847,7 +5888,9 @@ define_one_global_rw(inputboost_typingbooster_cores);
 // ff: Music Detection
 define_one_global_rw(music_max_freq);
 define_one_global_rw(music_min_freq);
+#ifdef ENABLE_HOTPLUGGING
 define_one_global_rw(music_min_cores);
+#endif
 define_one_global_rw(music_state);
 
 // Yank: version info tunable
@@ -5883,7 +5926,7 @@ static DEVICE_ATTR(profile_list, S_IRUGO , show_profile_list, NULL);
 
 #ifdef ZZMOOVE_DEBUG
 // Yank: debug info
-static ssize_t show_debug(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t show_zzmoove_debug(struct device *dev, struct device_attribute *attr, char *buf)
 {
 #ifdef ENABLE_HOTPLUGGING
     return sprintf(buf, "available cores                : %d\n"
@@ -6037,7 +6080,7 @@ static ssize_t show_debug(struct device *dev, struct device_attribute *attr, cha
 #endif /* ENABLE_HOTPLUGGING */
 }
 
-static DEVICE_ATTR(debug, S_IRUGO , show_debug, NULL);
+static DEVICE_ATTR(zzmoove_debug, S_IRUGO , show_zzmoove_debug, NULL);
 #endif
 
 static struct attribute *dbs_attributes[] = {
@@ -6176,7 +6219,9 @@ static struct attribute *dbs_attributes[] = {
 #endif
 	&music_max_freq.attr,
 	&music_min_freq.attr,
+#ifdef ENABLE_HOTPLUGGING
 	&music_min_cores.attr,
+#endif
 	&music_state.attr,
 	&dev_attr_version.attr,
 	&dev_attr_version_profiles.attr,
@@ -6186,7 +6231,7 @@ static struct attribute *dbs_attributes[] = {
 	&profile_sticky_mode.attr,
 	&auto_adjust_freq_thresholds.attr,
 #ifdef ZZMOOVE_DEBUG
-	&dev_attr_debug.attr,
+	&dev_attr_zzmoove_debug.attr,
 #endif
 	NULL
 };
