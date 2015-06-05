@@ -178,7 +178,6 @@ static void ion_buffer_add(struct ion_device *dev,
 /* this function should only be called while dev->lock is held */
 static struct ion_buffer *ion_buffer_create(struct ion_heap *heap,
 				     struct ion_device *dev,
-				     const char *alloc_client_name,
 				     unsigned long len,
 				     unsigned long align,
 				     unsigned long flags)
@@ -213,9 +212,6 @@ static struct ion_buffer *ion_buffer_create(struct ion_heap *heap,
 	buffer->size = len;
 	buffer->flags = flags;
 	INIT_LIST_HEAD(&buffer->vmas);
-
-	snprintf(buffer->alloc_client_name, ION_ALLOC_CLIENT_NAME_SIZE,
-		"%s", alloc_client_name);
 
 	table = heap->ops->map_dma(heap, buffer);
 	if (WARN_ONCE(table == NULL,
@@ -533,8 +529,7 @@ struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 			continue;
 		trace_ion_alloc_buffer_start(client->name, heap->name, len,
 					     heap_id_mask, flags);
-		buffer = ion_buffer_create(heap, dev, 
-					   client->name, len, align, flags);
+		buffer = ion_buffer_create(heap, dev, len, align, flags);
 		trace_ion_alloc_buffer_end(client->name, heap->name, len,
 					   heap_id_mask, flags);
 		if (!IS_ERR_OR_NULL(buffer))
