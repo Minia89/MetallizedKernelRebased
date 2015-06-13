@@ -533,10 +533,6 @@ static int cpu_boost_init(void)
 	atomic_notifier_chain_register(&migration_notifier_head,
 					&boost_migration_nb);
 
-	ret = smpboot_register_percpu_thread(&cpuboost_threads);
-	if (ret)
-		pr_err("Cannot register cpuboost threads.\n");
-
 	ret = input_register_handler(&cpuboost_input_handler);
 	if (ret)
 		pr_err("Cannot register cpuboost input handler.\n");
