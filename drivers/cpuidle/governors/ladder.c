@@ -140,7 +140,7 @@ static int ladder_enable_device(struct cpuidle_driver *drv,
 
 	ldev->last_state_idx = CPUIDLE_DRIVER_STATE_START;
 
-	for (i = CPUIDLE_DRIVER_STATE_START; i < drv->state_count; i++) {
+	for (i = 0; i < drv->state_count; i++) {
 		state = &drv->states[i];
 		lstate = &ldev->states[i];
 
@@ -152,7 +152,7 @@ static int ladder_enable_device(struct cpuidle_driver *drv,
 
 		if (i < drv->state_count - 1)
 			lstate->threshold.promotion_time = state->exit_latency;
-		if (i > CPUIDLE_DRIVER_STATE_START)
+		if (i > 0)
 			lstate->threshold.demotion_time = state->exit_latency;
 	}
 
