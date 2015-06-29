@@ -12,7 +12,6 @@
 #include <linux/slab.h>
 #include <linux/cpu.h>
 #include <linux/capability.h>
-#include <linux/device.h>
 
 #include "cpuidle.h"
 
@@ -219,8 +218,7 @@ struct cpuidle_state_attr {
 	struct attribute attr;
 	ssize_t (*show)(struct cpuidle_state *, \
 					struct cpuidle_state_usage *, char *);
-	ssize_t (*store)(struct cpuidle_state *, \
-			struct cpuidle_state_usage *, const char *, size_t);
+	ssize_t (*store)(struct cpuidle_state *, const char *, size_t);
 };
 
 #define define_one_state_ro(_name, show) \
@@ -236,22 +234,21 @@ static ssize_t show_state_##_name(struct cpuidle_state *state, \
 	return sprintf(buf, "%u\n", state->_name);\
 }
 
-#define define_store_state_ull_function(_name) \
+#define define_store_state_function(_name) \
 static ssize_t store_state_##_name(struct cpuidle_state *state, \
-		struct cpuidle_state_usage *state_usage, \
 		const char *buf, size_t size) \
 { \
-	unsigned long long value; \
+	long value; \
 	int err; \
 	if (!capable(CAP_SYS_ADMIN)) \
 		return -EPERM; \
-	err = kstrtoull(buf, 0, &value); \
+	err = kstrtol(buf, 0, &value); \
 	if (err) \
 		return err; \
 	if (value) \
-		state_usage->_name = 1; \
+		state->disable = 1; \
 	else \
-		state_usage->_name = 0; \
+		state->disable = 0; \
 	return size; \
 }
 
@@ -277,8 +274,8 @@ define_show_state_ull_function(usage)
 define_show_state_ull_function(time)
 define_show_state_str_function(name)
 define_show_state_str_function(desc)
-define_show_state_ull_function(disable)
-define_store_state_ull_function(disable)
+define_show_state_function(disable)
+define_store_state_function(disable)
 
 define_one_state_ro(name, show_state_name);
 define_one_state_ro(desc, show_state_desc);
@@ -297,13 +294,6 @@ static struct attribute *cpuidle_state_default_attrs[] = {
 	&attr_time.attr,
 	&attr_disable.attr,
 	NULL
-};
-
-struct cpuidle_state_kobj {
-	struct cpuidle_state *state;
-	struct cpuidle_state_usage *state_usage;
-	struct completion kobj_unregister;
-	struct kobject kobj;
 };
 
 #define kobj_to_state_obj(k) container_of(k, struct cpuidle_state_kobj, kobj)
@@ -329,11 +319,10 @@ static ssize_t cpuidle_state_store(struct kobject *kobj,
 {
 	int ret = -EIO;
 	struct cpuidle_state *state = kobj_to_state(kobj);
-	struct cpuidle_state_usage *state_usage = kobj_to_state_usage(kobj);
 	struct cpuidle_state_attr *cattr = attr_to_stateattr(attr);
 
 	if (cattr->store)
-		ret = cattr->store(state, state_usage, buf, size);
+		ret = cattr->store(state, buf, size);
 
 	return ret;
 }
@@ -375,7 +364,7 @@ static int cpuidle_add_state_sysfs(struct cpuidle_device *device)
 	struct cpuidle_driver *drv = cpuidle_get_cpu_driver(device);
 
 	/* state statistics */
-	for (i = 0; i < device->state_count; i++) {
+	for (i = 0; i < drv->state_count; i++) {
 		kobj = kzalloc(sizeof(struct cpuidle_state_kobj), GFP_KERNEL);
 		if (!kobj)
 			goto error_state;
@@ -383,8 +372,8 @@ static int cpuidle_add_state_sysfs(struct cpuidle_device *device)
 		kobj->state_usage = &device->states_usage[i];
 		init_completion(&kobj->kobj_unregister);
 
-		ret = kobject_init_and_add(&kobj->kobj, &ktype_state_cpuidle,
-					   &device->kobj, "state%d", i);
+		ret = kobject_init_and_add(&kobj->kobj, &ktype_state_cpuidle, &device->kobj,
+					   "state%d", i);
 		if (ret) {
 			kfree(kobj);
 			goto error_state;
@@ -579,13 +568,13 @@ void cpuidle_remove_device_sysfs(struct cpuidle_device *device)
  * cpuidle_add_sysfs - creates a sysfs instance for the target device
  * @dev: the target device
  */
-int cpuidle_add_sysfs(struct cpuidle_device *dev)
+int cpuidle_add_sysfs(struct device *cpu_dev)
 {
-	struct device *cpu_dev = get_cpu_device((unsigned long)dev->cpu);
+	int cpu = cpu_dev->id;
+	struct cpuidle_device *dev;
 	int error;
 
-	init_completion(&dev->kobj_unregister);
-
+	dev = per_cpu(cpuidle_devices, cpu);
 	error = kobject_init_and_add(&dev->kobj, &ktype_cpuidle, &cpu_dev->kobj,
 				     "cpuidle");
 	if (!error)
@@ -597,9 +586,11 @@ int cpuidle_add_sysfs(struct cpuidle_device *dev)
  * cpuidle_remove_sysfs - deletes a sysfs instance on the target device
  * @dev: the target device
  */
-void cpuidle_remove_sysfs(struct cpuidle_device *dev)
+void cpuidle_remove_sysfs(struct device *cpu_dev)
 {
-	kobject_put(&dev->kobj);
-	wait_for_completion(&dev->kobj_unregister);
-}
+	int cpu = cpu_dev->id;
+	struct cpuidle_device *dev;
 
+	dev = per_cpu(cpuidle_devices, cpu);
+	kobject_put(&dev->kobj);
+}
