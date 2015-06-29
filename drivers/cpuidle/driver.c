@@ -41,6 +41,7 @@ static void __cpuidle_register_driver(struct cpuidle_driver *drv)
 	}
 }
 
+
 /**
  * cpuidle_register_driver - registers a driver
  * @drv: the driver
@@ -64,6 +65,7 @@ int cpuidle_register_driver(struct cpuidle_driver *drv)
 
 	return 0;
 }
+
 EXPORT_SYMBOL_GPL(cpuidle_register_driver);
 
 /**
@@ -94,6 +96,7 @@ void cpuidle_unregister_driver(struct cpuidle_driver *drv)
 
 	spin_unlock(&cpuidle_driver_lock);
 }
+
 EXPORT_SYMBOL_GPL(cpuidle_unregister_driver);
 
 struct cpuidle_driver *cpuidle_driver_ref(void)
