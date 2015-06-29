@@ -17,7 +17,7 @@
 #include <linux/completion.h>
 #include <linux/hrtimer.h>
 
-#define CPUIDLE_STATE_MAX	10
+#define CPUIDLE_STATE_MAX	8
 #define CPUIDLE_NAME_LEN	16
 #define CPUIDLE_DESC_LEN	32
 
@@ -32,7 +32,8 @@ struct cpuidle_driver;
  ****************************/
 
 struct cpuidle_state_usage {
-	unsigned long long	disable;
+	void		*driver_data;
+
 	unsigned long long	usage;
 	unsigned long long	time; /* in US */
 };
@@ -45,7 +46,7 @@ struct cpuidle_state {
 	unsigned int	exit_latency; /* in US */
 	int		power_usage; /* in mW */
 	unsigned int	target_residency; /* in US */
-	bool		disabled; /* disabled on all CPUs */
+	unsigned int    disable;
 
 	int (*enter)	(struct cpuidle_device *dev,
 			struct cpuidle_driver *drv,
@@ -57,9 +58,35 @@ struct cpuidle_state {
 /* Idle State Flags */
 #define CPUIDLE_FLAG_TIME_VALID	(0x01) /* is residency time measurable? */
 #define CPUIDLE_FLAG_COUPLED	(0x02) /* state applies to multiple cpus */
-#define CPUIDLE_FLAG_TIMER_STOP (0x04)  /* timer is stopped on this state */
 
 #define CPUIDLE_DRIVER_FLAGS_MASK (0xFFFF0000)
+
+/**
+ * cpuidle_get_statedata - retrieves private driver state data
+ * @st_usage: the state usage statistics
+ */
+static inline void *cpuidle_get_statedata(struct cpuidle_state_usage *st_usage)
+{
+	return st_usage->driver_data;
+}
+
+/**
+ * cpuidle_set_statedata - stores private driver state data
+ * @st_usage: the state usage statistics
+ * @data: the private data
+ */
+static inline void
+cpuidle_set_statedata(struct cpuidle_state_usage *st_usage, void *data)
+{
+	st_usage->driver_data = data;
+}
+
+struct cpuidle_state_kobj {
+	struct cpuidle_state *state;
+	struct cpuidle_state_usage *state_usage;
+	struct completion kobj_unregister;
+	struct kobject kobj;
+};
 
 struct cpuidle_device {
 	unsigned int		registered:1;
@@ -105,6 +132,8 @@ struct cpuidle_driver {
 	struct module 		*owner;
 	int                     refcnt;
 
+	/* set to 1 to use the core cpuidle time keeping (for all states). */
+	unsigned int		en_core_tk_irqen:1;
         /* used by the cpuidle framework to setup the broadcast timer */
 	unsigned int            bctimer:1;
 	/* states array must be ordered in decreasing power consumption */
@@ -113,7 +142,7 @@ struct cpuidle_driver {
 	int			safe_state_index;
 
 	/* the driver handles the cpus in cpumask */
-	struct cpumask		*cpumask;
+	struct cpumask       *cpumask;
 };
 
 #ifdef CONFIG_CPU_IDLE
@@ -131,10 +160,12 @@ extern int cpuidle_register(struct cpuidle_driver *drv,
 extern void cpuidle_unregister(struct cpuidle_driver *drv);
 extern void cpuidle_pause_and_lock(void);
 extern void cpuidle_resume_and_unlock(void);
-extern void cpuidle_pause(void);
-extern void cpuidle_resume(void);
 extern int cpuidle_enable_device(struct cpuidle_device *dev);
 extern void cpuidle_disable_device(struct cpuidle_device *dev);
+extern int cpuidle_wrap_enter(struct cpuidle_device *dev,
+				struct cpuidle_driver *drv, int index,
+				int (*enter)(struct cpuidle_device *dev,
+					struct cpuidle_driver *drv, int index));
 extern int cpuidle_play_dead(void);
 
 extern struct cpuidle_driver *cpuidle_get_cpu_driver(struct cpuidle_device *dev);
@@ -156,20 +187,19 @@ static inline int cpuidle_register(struct cpuidle_driver *drv,
 static inline void cpuidle_unregister(struct cpuidle_driver *drv) { }
 static inline void cpuidle_pause_and_lock(void) { }
 static inline void cpuidle_resume_and_unlock(void) { }
-static inline void cpuidle_pause(void) { }
-static inline void cpuidle_resume(void) { }
 static inline int cpuidle_enable_device(struct cpuidle_device *dev)
 {return -ENODEV; }
 static inline void cpuidle_disable_device(struct cpuidle_device *dev) { }
+static inline int cpuidle_wrap_enter(struct cpuidle_device *dev,
+				struct cpuidle_driver *drv, int index,
+				int (*enter)(struct cpuidle_device *dev,
+					struct cpuidle_driver *drv, int index))
+{ return -ENODEV; }
 static inline int cpuidle_play_dead(void) {return -ENODEV; }
 #endif
 
 #ifdef CONFIG_ARCH_NEEDS_CPU_IDLE_COUPLED
 void cpuidle_coupled_parallel_barrier(struct cpuidle_device *dev, atomic_t *a);
-#else
-static inline void cpuidle_coupled_parallel_barrier(struct cpuidle_device *dev, atomic_t *a)
-{
-}
 #endif
 
 /******************************
@@ -194,10 +224,23 @@ struct cpuidle_governor {
 };
 
 #ifdef CONFIG_CPU_IDLE
+
 extern int cpuidle_register_governor(struct cpuidle_governor *gov);
+extern void cpuidle_unregister_governor(struct cpuidle_governor *gov);
+
+#ifdef CONFIG_INTEL_IDLE
+extern int intel_idle_cpu_init(int cpu);
 #else
+static inline int intel_idle_cpu_init(int cpu) { return -1; }
+#endif
+
+#else
+static inline int intel_idle_cpu_init(int cpu) { return -1; }
+
 static inline int cpuidle_register_governor(struct cpuidle_governor *gov)
 {return 0;}
+static inline void cpuidle_unregister_governor(struct cpuidle_governor *gov) { }
+
 #endif
 
 #ifdef CONFIG_ARCH_HAS_CPU_RELAX
@@ -207,4 +250,3 @@ static inline int cpuidle_register_governor(struct cpuidle_governor *gov)
 #endif
 
 #endif /* _LINUX_CPUIDLE_H */
-
