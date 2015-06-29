@@ -2286,9 +2286,7 @@ static int mdss_fb_release_all(struct fb_info *info, bool release_all)
 		pr_warn("fb%d ioctl could not finish. waited 1 sec.\n",
 			mfd->index);
 
-	/* wait only for the last release */
-	if (release_all || (mfd->ref_cnt == 1))
-		mdss_fb_pan_idle(mfd);
+	mdss_fb_pan_idle(mfd);
 
 	pr_debug("release_all = %s\n", release_all ? "true" : "false");
 
