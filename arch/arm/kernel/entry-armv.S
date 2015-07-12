@@ -396,7 +396,6 @@ ENDPROC(__pabt_svc)
 #ifdef CONFIG_IRQSOFF_TRACER
 	bl	trace_hardirqs_off
 #endif
-	ct_user_exit save = 0
 	.endm
 
 	.macro	kuser_cmpxchg_check
