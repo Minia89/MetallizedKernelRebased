@@ -1824,10 +1824,6 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 		goto error_out;
 	}
 
-	//Added to ensure mpdecision can scale back the policy
-	if (new_policy->user_policy.min > new_policy->min)
-		new_policy->user_policy.min = new_policy->min;
-
 	/* verify the cpu speed can be set within this limit */
 	ret = cpufreq_driver->verify(policy);
 	if (ret)
