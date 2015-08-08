@@ -150,6 +150,11 @@ config CPU_FREQ_DEFAULT_GOV_BLU_ACTIVE
 	select CPU_FREQ_GOV_BLU_ACTIVE
 	help
 
+config CPU_FREQ_DEFAULT_GOV_SMARTMAX_EPS
+	bool "smartmax_eps"
+	select CPU_FREQ_GOV_SMARTMAX_EPS
+	help
+
 config CPU_FREQ_DEFAULT_GOV_POWERSAVE
 	bool "powersave"
 	depends on EXPERT
@@ -279,6 +284,11 @@ config CPU_FREQ_GOV_BARRY_ALLEN
 config CPU_FREQ_GOV_BLU_ACTIVE
 	tristate "'blu_active' cpufreq governor"
 	depends on CPU_FREQ
+
+config CPU_FREQ_GOV_SMARTMAX_EPS
+	tristate "'smartmax EPS' cpufreq policy governor"
+	select CPU_FREQ_TABLE
+	help
 
 config CPU_FREQ_GOV_POWERSAVE
 	tristate "'powersave' governor"
