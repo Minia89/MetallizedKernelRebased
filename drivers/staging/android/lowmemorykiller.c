@@ -194,8 +194,7 @@ void adjust_gfp_mask(gfp_t *unused)
 }
 #endif
 
-void tune_lmk_param(int *other_free, int *other_file, struct shrink_control *sc,
-				struct zone_avail zall[][MAX_NR_ZONES])
+void tune_lmk_param(int *other_free, int *other_file, struct shrink_control *sc)
 {
 	gfp_t gfp_mask;
 	struct zone *preferred_zone;
