@@ -143,6 +143,7 @@ static int lmk_vmpressure_notifier(struct notifier_block *nb,
 		other_free = global_page_state(NR_FREE_PAGES);
 
 		atomic_set(&shift_adj, 1);
+		trace_almk_vmpressure(pressure, other_free, other_file);
 	} else if (pressure >= 90) {
 		if (lowmem_adj_size < array_size)
 			array_size = lowmem_adj_size;
@@ -437,7 +438,8 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 
 		if ((min_score_adj == OOM_SCORE_ADJ_MAX + 1) &&
 			(nr_to_scan > 0))
-		
+			trace_almk_shrink(0, ret, other_free, other_file, 0);
+
 		return rem;
 	}
 	selected_oom_score_adj = min_score_adj;
@@ -555,6 +557,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 
 		if (lowmem_debug_level >= 2 && selected_oom_score_adj == 0) {
 			show_mem(SHOW_MEM_FILTER_NODES);
+			dump_tasks(NULL, NULL);
 			show_mem_call_notifiers();
 		}
 
