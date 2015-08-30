@@ -49,7 +49,6 @@
 #include <linux/vmpressure.h>
 
 #define CREATE_TRACE_POINTS
-#include <trace/events/almk.h>
 
 #ifdef CONFIG_HIGHMEM
 #define _ZONE ZONE_HIGHMEM
