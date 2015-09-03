@@ -18,6 +18,8 @@
  *
  *  v1.6 - remove autosleep and hybrid modes (autosleep not working on shamu)
  *
+ *  v1.7 - do only run state change if change actually requests a new state
+ *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
  * may be copied, distributed, and modified under those terms.
@@ -35,7 +37,7 @@
 #include <linux/workqueue.h>
 
 #define MAJOR_VERSION	1
-#define MINOR_VERSION	6
+#define MINOR_VERSION	7
 
 struct workqueue_struct *suspend_work_queue;
 
@@ -126,6 +128,7 @@ static void power_resume(struct work_struct *work)
 	#ifdef CONFIG_POWERSUSPEND_DEBUG
 	pr_info("[POWERSUSPEND] resuming...\n");
 	#endif
+	dprintk("[POWERSUSPEND] resuming...\n");
 	list_for_each_entry_reverse(pos, &power_suspend_handlers, link) {
 		if (pos->resume != NULL) {
 			pos->resume(pos);
@@ -134,33 +137,31 @@ static void power_resume(struct work_struct *work)
 	#ifdef CONFIG_POWERSUSPEND_DEBUG
 	pr_info("[POWERSUSPEND] resume completed.\n");
 	#endif
+	dprintk("[POWERSUSPEND] resume completed.\n");
+	sleep_state = 0;
 abort_resume:
 	mutex_unlock(&power_suspend_lock);
 }
-
-bool power_suspended = false;
 
 void set_power_suspend_state(int new_state)
 {
 	unsigned long irqflags;
 
-	spin_lock_irqsave(&state_lock, irqflags);
-	if (state == POWER_SUSPEND_INACTIVE && new_state == POWER_SUSPEND_ACTIVE) {
-		#ifdef CONFIG_POWERSUSPEND_DEBUG
-		pr_info("[POWERSUSPEND] state activated.\n");
-		#endif
-		state = new_state;
-		power_suspended = true;
-		queue_work(suspend_work_queue, &power_suspend_work);
-	} else if (state == POWER_SUSPEND_ACTIVE && new_state == POWER_SUSPEND_INACTIVE) {
-		#ifdef CONFIG_POWERSUSPEND_DEBUG
-		pr_info("[POWERSUSPEND] state deactivated.\n");
-		#endif
-		state = new_state;
-		power_suspended = false;
-		queue_work(suspend_work_queue, &power_resume_work);
+	if (state != new_state) {
+		spin_lock_irqsave(&state_lock, irqflags);
+		if (state == POWER_SUSPEND_INACTIVE && new_state == POWER_SUSPEND_ACTIVE) {
+			dprintk("[POWERSUSPEND] state activated.\n");
+			state = new_state;
+			queue_work(suspend_work_queue, &power_suspend_work);
+		} else if (state == POWER_SUSPEND_ACTIVE && new_state == POWER_SUSPEND_INACTIVE) {
+			dprintk("[POWERSUSPEND] state deactivated.\n");
+			state = new_state;
+			queue_work(suspend_work_queue, &power_resume_work);
+		}
+		spin_unlock_irqrestore(&state_lock, irqflags);
+	} else {
+		dprintk("[POWERSUSPEND] state change requested, but unchanged ?! Ignored !\n");
 	}
-	spin_unlock_irqrestore(&state_lock, irqflags);
 }
 
 void set_power_suspend_state_panel_hook(int new_state)
@@ -290,8 +291,11 @@ static int __init power_suspend_init(void)
 		return -ENOMEM;
 	}
 
-//	mode = POWER_SUSPEND_USERSPACE;	// Yank555.lu : Default to userspace mode
-	mode = POWER_SUSPEND_PANEL;	// Yank555.lu : Default to display panel mode
+#if 0 /* INFO */
+	suspend_mode = POWER_SUSPEND_USERSPACE;	/* Yank555.lu : Default to userspace suspend_mode */
+	suspend_mode = POWER_SUSPEND_PANEL;	/* Yank555.lu : Default to display panel suspend_mode */
+#endif
+	suspend_mode = POWER_SUSPEND_PANEL; /* Yank555.lu : Default to display panel suspend_mode */
 
 	return 0;
 }
