@@ -427,57 +427,13 @@ static inline int track_pfn_vma_copy(struct vm_area_struct *vma)
 static inline void untrack_pfn_vma(struct vm_area_struct *vma,
 					unsigned long pfn, unsigned long size)
 {
-static inline void untrack_pfn(struct vm_area_struct *vma,
-			       unsigned long pfn, unsigned long size)
-{
 }
-#else
-extern int track_pfn_remap(struct vm_area_struct *vma, pgprot_t *prot,
-			   unsigned long pfn, unsigned long addr,
-			   unsigned long size);
-extern int track_pfn_insert(struct vm_area_struct *vma, pgprot_t *prot,
-			    unsigned long pfn);
-extern int track_pfn_copy(struct vm_area_struct *vma);
-extern void untrack_pfn(struct vm_area_struct *vma, unsigned long pfn,
-			unsigned long size);
-#endif
-
-#ifdef CONFIG_UKSM
-static inline int is_uksm_zero_pfn(unsigned long pfn)
-{
-	extern unsigned long uksm_zero_pfn;
-        return pfn == uksm_zero_pfn;
-}
-#else
-static inline int is_uksm_zero_pfn(unsigned long pfn)
-{
-        return 0;
-}
-#endif
-
-#ifdef __HAVE_COLOR_ZERO_PAGE
-static inline int is_zero_pfn(unsigned long pfn)
-{
-	extern unsigned long zero_pfn;
-	unsigned long offset_from_zero_pfn = pfn - zero_pfn;
-	return offset_from_zero_pfn <= (zero_page_mask >> PAGE_SHIFT) || is_uksm_zero_pfn(pfn);
 #else
 extern int track_pfn_vma_new(struct vm_area_struct *vma, pgprot_t *prot,
 				unsigned long pfn, unsigned long size);
 extern int track_pfn_vma_copy(struct vm_area_struct *vma);
 extern void untrack_pfn_vma(struct vm_area_struct *vma, unsigned long pfn,
 				unsigned long size);
-static inline int is_zero_pfn(unsigned long pfn)
-{
-	extern unsigned long zero_pfn;
-	return (pfn == zero_pfn) || (is_uksm_zero_pfn(pfn));
-}
-
-static inline unsigned long my_zero_pfn(unsigned long addr)
-{
-	extern unsigned long zero_pfn;
-	return zero_pfn;
-}
 #endif
 
 #ifdef CONFIG_MMU
