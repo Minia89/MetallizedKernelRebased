@@ -128,7 +128,6 @@ static void power_resume(struct work_struct *work)
 	#ifdef CONFIG_POWERSUSPEND_DEBUG
 	pr_info("[POWERSUSPEND] resuming...\n");
 	#endif
-	dprintk("[POWERSUSPEND] resuming...\n");
 	list_for_each_entry_reverse(pos, &power_suspend_handlers, link) {
 		if (pos->resume != NULL) {
 			pos->resume(pos);
@@ -137,8 +136,6 @@ static void power_resume(struct work_struct *work)
 	#ifdef CONFIG_POWERSUSPEND_DEBUG
 	pr_info("[POWERSUSPEND] resume completed.\n");
 	#endif
-	dprintk("[POWERSUSPEND] resume completed.\n");
-	sleep_state = 0;
 abort_resume:
 	mutex_unlock(&power_suspend_lock);
 }
@@ -150,17 +147,14 @@ void set_power_suspend_state(int new_state)
 	if (state != new_state) {
 		spin_lock_irqsave(&state_lock, irqflags);
 		if (state == POWER_SUSPEND_INACTIVE && new_state == POWER_SUSPEND_ACTIVE) {
-			dprintk("[POWERSUSPEND] state activated.\n");
 			state = new_state;
 			queue_work(suspend_work_queue, &power_suspend_work);
 		} else if (state == POWER_SUSPEND_ACTIVE && new_state == POWER_SUSPEND_INACTIVE) {
-			dprintk("[POWERSUSPEND] state deactivated.\n");
 			state = new_state;
 			queue_work(suspend_work_queue, &power_resume_work);
 		}
 		spin_unlock_irqrestore(&state_lock, irqflags);
 	} else {
-		dprintk("[POWERSUSPEND] state change requested, but unchanged ?! Ignored !\n");
 	}
 }
 
@@ -295,8 +289,6 @@ static int __init power_suspend_init(void)
 	suspend_mode = POWER_SUSPEND_USERSPACE;	/* Yank555.lu : Default to userspace suspend_mode */
 	suspend_mode = POWER_SUSPEND_PANEL;	/* Yank555.lu : Default to display panel suspend_mode */
 #endif
-	suspend_mode = POWER_SUSPEND_PANEL; /* Yank555.lu : Default to display panel suspend_mode */
-
 	return 0;
 }
 
