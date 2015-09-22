@@ -424,9 +424,8 @@ static struct usbmix_ctl_map usbmix_ctl_maps[] = {
 		.ignore_ctl_error = 1,
 	},
 	{
-		/* MAYA44 USB+ */
-		.id = USB_ID(0x2573, 0x0008),
-		.map = maya44_map,
+		.id = USB_ID(0x200c, 0x1018),
+		.map = ebox44_map,
 	},
 	{
 		/* KEF X300A */
